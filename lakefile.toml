@@ -1,0 +1,8 @@
+name = "LowDimLinAlg"
+version = "0.1.0"
+defaultTargets = ["LowDimLinAlg"]
+srcDir = "src"
+leanOptions.autoImplicit = false
+
+[[lean_lib]]
+name = "LowDimLinAlg"
