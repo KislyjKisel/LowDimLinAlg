@@ -13,7 +13,7 @@ namespace LowDimLinAlg
 
 run_cmd
   Meta.forEachScalar Meta.floats fun cx => do
-    let sTy := cx.scalarTypeIdent
+    let sTy := cx.scalarType
     let qTy := cx.structure "Quaternion"
     let v3Ty := cx.structure "Vector3"
     let v4Ty := cx.structure "Vector4"

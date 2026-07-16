@@ -4,14 +4,15 @@ import LowDimLinAlg.Meta.ForEachScalar
 
 @[expose] public section
 
+set_option hygiene false
+
 namespace LowDimLinAlg
 
-set_option hygiene false in
 run_cmd
   Meta.forEachScalar Meta.floats fun cx => do
-    let sTy := cx.scalarTypeIdent
+    let sTy := cx.scalarType
     Lean.Elab.Command.elabCommand <| ← `(
-      namespace $cx.scalarNamespace
+      namespace $cx.scalarExtNamespace
       /--
       Restricts a value to a certain interval.
       Returns NaN if `value` is NaN, `min` if `value` < `min`, `max` if `value` > `max` and `value` otherwise.
@@ -19,7 +20,7 @@ run_cmd
       Panics if `min` > `max`, `min` is NaN, or `max` is NaN.
       -/
       @[inline]
-      def clamp (value min max : $sTy) : $sTy :=
+      def clamp (min max value : $sTy) : $sTy :=
         if min.isNaN || max.isNaN || min > max
           then panic! "min > max, or either is NaN. min = {min}, max = {max}"
           else if value.isNaN
@@ -33,7 +34,7 @@ run_cmd
       Panics if `limit` is negative or NaN.
       -/
       @[inline]
-      def clampMagnitude (value limit : $sTy) : $sTy :=
+      def clampMagnitude (limit value : $sTy) : $sTy :=
         if 1 / limit < 0 || limit.isNaN
           then panic! "limit is negative or NaN. limit = {limit}"
           else if value.isNaN
@@ -52,7 +53,7 @@ run_cmd
       * NaN if `value` is NaN
       -/
       @[inline]
-      def signum (value : $sTy) : $sTy :=
+      def sign (value : $sTy) : $sTy :=
         if value.isNaN
           then value
           else if 1 / value >= 0
@@ -115,7 +116,7 @@ run_cmd
         let δ := «end» - start
         value - δ * ((value - start) / δ).floor
 
-      end $cx.scalarNamespace
+      end $cx.scalarExtNamespace
     )
 
 /-- Positive infinity -/

@@ -48,7 +48,7 @@ def BVector2.y (v : BVector2) : Bool :=
 
 run_cmd
   Meta.forEachScalar Meta.numbers fun cx => do
-    let sTy := cx.scalarTypeIdent
+    let sTy := cx.scalarType
     let v2Ty := cx.structure "Vector2"
     Lean.Elab.Command.elabCommand <| ← `(
       structure $v2Ty where
@@ -85,6 +85,11 @@ run_cmd
       /-- A unit vector pointing along the negative Y axis. -/
       @[inline]
       def unitNegY : $v2Ty := ⟨0, -1⟩
+
+      /-- Creates a vector with results of applying `f` to each component. -/
+      @[inline]
+      def mapBool (f : $sTy → Bool) (v : $v2Ty) : BVector2 :=
+        .mk (f v.x) (f v.y)
 
       /-- Componentwise addition (integers wrap on underflow and overflow). -/
       @[inline]
@@ -132,16 +137,37 @@ run_cmd
       @[inline] instance : HDiv $v2Ty $sTy $v2Ty := ⟨fun v s ↦ v.scale (1 / s)⟩
       @[inline] instance : HDiv $sTy $v2Ty $v2Ty := ⟨fun s v ↦ ⟨s / v.x, s / v.y⟩⟩
 
+      /-- Sum of components. -/
+      @[inline]
+      def sum (v : $v2Ty) : $sTy :=
+        v.x + v.y
+
+      /-- Product of components. -/
+      @[inline]
+      def product (v : $v2Ty) : $sTy :=
+        v.x * v.y
+
+      /-- Dot product of two vectors. -/
       @[inline]
       def dot (a b : $v2Ty) : $sTy :=
         a.x * b.x + a.y * b.y
+
+      /-- Vector length squared. -/
+      @[inline]
+      def lengthSqr (v : $v2Ty) : $sTy :=
+        dot v v
+
+      /-- Squared distance between two points represented by vectors from any third point. -/
+      @[inline]
+      def distanceSqr (a b : $v2Ty) : $sTy :=
+        lengthSqr <| a - b
 
       end $v2Ty
     )
 
 run_cmd
   Meta.forEachScalar Meta.scalars fun cx => do
-    let sTy := cx.scalarTypeIdent
+    let sTy := cx.scalarType
     let v2Ty := cx.structure "Vector2"
     Lean.Elab.Command.elabCommand <| ← `(
       namespace $v2Ty
@@ -176,12 +202,20 @@ run_cmd
       | .y, y => .mk v.x y
 
       /-- Minimal component of a vector. -/
-      def min' (v : $v2Ty) : $sTy :=
+      def minValue (v : $v2Ty) : $sTy :=
         Min.min v.x v.y
 
       /-- Maximal component of a vector. -/
-      def max' (v : $v2Ty) : $sTy :=
+      def maxValue (v : $v2Ty) : $sTy :=
         Max.max v.x v.y
+
+      /-- First minimal component axis. -/
+      def minAxis (v : $v2Ty) : Axis2 :=
+        if v.x <= v.y then .x else .y
+
+      /-- First maximal component axis. -/
+      def maxAxis (v : $v2Ty) : Axis2 :=
+        if v.x >= v.y then .x else .y
 
       /-- Creates a vector with `y` set to `v.y`. -/
       @[inline]
@@ -271,17 +305,29 @@ run_cmd
       def ge (a b : $v2Ty) : BVector2 :=
         .mk (a.x >= b.x) (a.y >= b.y)
 
-      @[inline] instance : Min $v2Ty := ⟨min⟩
-      @[inline] instance : Max $v2Ty := ⟨max⟩
+      /-- Returns `true` if application of `f` to *any* of the components returns `true`. -/
+      @[inline]
+      def any (f : $sTy → Bool) (v : $v2Ty) : Bool :=
+        f v.x || f v.y
+
+      /-- Returns `true` if application of `f` to *each* component returns `true`. -/
+      @[inline]
+      def all (f : $sTy → Bool) (v : $v2Ty) : Bool :=
+        f v.x && f v.y
 
       end $v2Ty
     )
 
 run_cmd
   Meta.forEachScalar Meta.floats fun cx => do
-    let sInf := cx.scalarMember "inf"
-    let sNegInf := cx.scalarMember "negInf"
+    let sTy := cx.scalarType
     let v2Ty := cx.structure "Vector2"
+    let sInf := cx.scalarExtMember "inf"
+    let sNegInf := cx.scalarExtMember "negInf"
+    let sClamp := cx.scalarExtMember "clamp"
+    let sSign := cx.scalarExtMember "sign"
+    let sSqrt := cx.scalarMember "sqrt"
+    let sIsFinite := cx.scalarMember "isFinite"
     Lean.Elab.Command.elabCommand <| ← `(
       namespace $v2Ty
 
@@ -298,6 +344,49 @@ run_cmd
       /-- All components set to negative infinity. -/
       @[inline]
       def negInf : $v2Ty := splat $sNegInf
+
+      /-- Component-wise clamping of components. -/
+      @[inline]
+      def clamp (min max v : $v2Ty) : $v2Ty :=
+        ⟨$sClamp min.x max.x v.x, $sClamp min.y max.y v.y⟩
+
+      /-- Component-wise sign (does not return zeros). -/
+      @[inline]
+      def sign (v : $v2Ty) : $v2Ty :=
+        ⟨$sSign v.x, $sSign v.y⟩
+
+      /-- Vector length. -/
+      @[inline]
+      def length (v : $v2Ty) : $sTy :=
+        $sSqrt <| lengthSqr v
+
+      /-- Distance between two points represented by vectors from any third point. -/
+      @[inline]
+      def distance (a b : $v2Ty) : $sTy :=
+        $sSqrt <| distanceSqr a b
+
+      /--
+      Normalizes vector to the length of `1`.
+
+      Returns `none` if the resulting vector is not finite.
+      -/
+      @[inline]
+      def normalize? (v : $v2Ty) : Option $v2Ty :=
+        let v' := v * (1 / v.length)
+        if v'.any <| not ∘ $sIsFinite
+          then none
+          else some v'
+
+      /--
+      Normalizes vector to the length of `1`.
+
+      Panics if the resulting vector is not finite.
+      -/
+      @[inline]
+      def normalize! (v : $v2Ty) : $v2Ty :=
+        match normalize? v with
+        | none => panic! "normalized vector is not finite, vector = {v}"
+        | some v' => v'
 
       end $v2Ty
     )
@@ -334,6 +423,40 @@ run_cmd
       @[inline] instance : OrOp $v2Ty := ⟨or⟩
       @[inline] instance : XorOp $v2Ty := ⟨xor⟩
       @[inline] instance : Complement $v2Ty := ⟨complement⟩
+
+      /-- Component-wise clamping of components. -/
+      @[inline]
+      def clamp (min max v : $v2Ty) : $v2Ty :=
+        ⟨Max.max min.x (Min.min v.x max.x), Max.max min.y (Min.min v.y max.y)⟩
+
+      end $v2Ty
+    )
+
+run_cmd
+  Meta.forEachScalar Meta.signedIntegers fun cx => do
+    let v2Ty := cx.structure "Vector2"
+    Lean.Elab.Command.elabCommand <| ← `(
+      namespace $v2Ty
+
+      /-- Component-wise sign (does not return zeros). -/
+      @[inline]
+      def sign (v : $v2Ty) : $v2Ty :=
+        ⟨cond (v.x < 0) (-1) 1, cond (v.y < 0) (-1) 1⟩
+
+      end $v2Ty
+    )
+
+run_cmd
+  Meta.forEachScalar Meta.signed fun cx => do
+    let v2Ty := cx.structure "Vector2"
+    let abs := cx.scalarMember "abs"
+    Lean.Elab.Command.elabCommand <| ← `(
+      namespace $v2Ty
+
+      /-- Computes absolute values of components. -/
+      @[inline]
+      def abs (v : $v2Ty) : $v2Ty :=
+        ⟨$abs v.x, $abs v.y⟩
 
       end $v2Ty
     )

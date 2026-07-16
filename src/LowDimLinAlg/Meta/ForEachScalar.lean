@@ -10,17 +10,20 @@ structure Context where
   scalarTypeName : Lean.Name
   scalarPrefix : String
 
-def Context.scalarTypeIdent (cx : Context) : Lean.Ident :=
+def Context.scalarType (cx : Context) : Lean.Ident :=
   Lean.mkIdent cx.scalarTypeName
 
 def Context.structure (cx : Context) (suffix : String) : Lean.Ident :=
   Lean.mkIdent <| Lean.Name.mkSimple <| cx.scalarPrefix ++ suffix
 
-def Context.scalarNamespace (cx : Context) : Lean.Ident :=
+def Context.scalarExtNamespace (cx : Context) : Lean.Ident :=
   Lean.mkIdent <| Lean.Name.mkSimple cx.scalarPrefix
 
-def Context.scalarMember (cx : Context) (fn : String) : Lean.Ident :=
+def Context.scalarExtMember (cx : Context) (fn : String) : Lean.Ident :=
   Lean.mkIdent <| Lean.Name.mkStr2 cx.scalarPrefix fn
+
+def Context.scalarMember (cx : Context) (fn : String) : Lean.Ident :=
+  Lean.mkIdent <| cx.scalarTypeName.str fn
 
 def Context.structureMember (cx : Context) (suffix : String) (fn : String) : Lean.Ident :=
   Lean.mkIdent <| Lean.Name.mkStr2 (cx.scalarPrefix ++ suffix) fn
@@ -47,6 +50,8 @@ def floats := #[
   (``Float32, "F32"),
   (``Float, "F64"),
 ]
+
+def signed := floats ++ signedIntegers
 
 def numbers := floats ++ integers
 
