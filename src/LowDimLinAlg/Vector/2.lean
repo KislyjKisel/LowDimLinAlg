@@ -350,6 +350,8 @@ run_cmd
           def $toV2Ty2 (v : $v2Ty1) : $v2Ty2 :=
             .mk ($s1To2 v.x) ($s1To2 v.y)
         )
+        Lean.addDocStringCore (← Lean.resolveGlobalConstNoOverload toV2Ty2)
+          s!"Componentwise conversion to `{cx2.scalarTypeName}` scalar type using `{s1To2.getId}`"
       if let some s2To1 ← Meta.scalarConvertFn? cx2 cx1 then
         let ofV2Ty2 := cx1.structureMember "Vector2" <| "of" ++ cx2.scalarPrefix
         Lean.Elab.Command.elabCommand <| ← `(
@@ -357,6 +359,8 @@ run_cmd
           def $ofV2Ty2 (v : $v2Ty2) : $v2Ty1 :=
             .mk ($s2To1 v.x) ($s2To1 v.y)
         )
+        Lean.addDocStringCore (← Lean.resolveGlobalConstNoOverload ofV2Ty2)
+          s!"Componentwise conversion from `{cx2.scalarTypeName}` scalar type using `{s2To1.getId}`"
 
 /-- Creates a vector from a scalar array. Panics if the array's size is less than 2. -/
 @[inline]
