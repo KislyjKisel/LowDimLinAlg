@@ -22,7 +22,7 @@ structure BVector2 where
   `x` is the first bit and `y` is the second.
   -/
   bits : UInt8
-  /-- Only first two bits may be set. -/
+  /-- Only first 2 bits may be set. -/
   length2 : bits &&& 0b11 = bits
 deriving DecidableEq
 
@@ -40,11 +40,11 @@ def BVector2.mk (x y : Bool) : BVector2 :=
 
 @[inline]
 def BVector2.x (v : BVector2) : Bool :=
-  v.bits &&& 0b001 != 0
+  v.bits &&& 0b01 != 0
 
 @[inline]
 def BVector2.y (v : BVector2) : Bool :=
-  v.bits &&& 0b010 != 0
+  v.bits &&& 0b10 != 0
 
 run_cmd
   Meta.forEachScalar Meta.numbers fun cx => do
