@@ -6,9 +6,10 @@ import LowDimLinAlg.Meta.ForEachScalar
 
 @[expose] public section
 
+set_option hygiene false
+
 namespace LowDimLinAlg
 
-set_option hygiene false in
 run_cmd
   Meta.forEachScalar Meta.scalars fun cx => do
     let v2Ty := cx.structure "Vector2"
@@ -25,7 +26,7 @@ run_cmd
         let v2swzl2 := Lean.mkIdent <| v2Ty.getId.append <| .mkSimple (a ++ b)
         Lean.Elab.Command.elabCommand <| ← `(
           @[inline]
-          def $v2swzl2 (v : $v2Ty) : $v2Ty := ⟨$v2a, $v2b⟩
+          def $v2swzl2 (v : $v2Ty) : $v2Ty := .mk $v2a $v2b
         )
         Lean.addDocStringCore (← Lean.resolveGlobalConstNoOverload v2swzl2)
           s!"Creates a vector with `x := v.{a}, y := v.{b}`"
@@ -34,7 +35,7 @@ run_cmd
           let v2swzl3 := Lean.mkIdent <| v2Ty.getId.append <| .mkSimple (a ++ b ++ c)
           Lean.Elab.Command.elabCommand <| ← `(
             @[inline]
-            def $v2swzl3 (v : $v2Ty) : $v3Ty := ⟨$v2a, $v2b, $v2c⟩
+            def $v2swzl3 (v : $v2Ty) : $v3Ty := .mk $v2a $v2b $v2c
           )
           Lean.addDocStringCore (← Lean.resolveGlobalConstNoOverload v2swzl3)
             s!"Creates a vector with `x := v.{a}, y := v.{b}, z := v.{c}`"
@@ -43,7 +44,7 @@ run_cmd
             let v2swzl4 := Lean.mkIdent <| v2Ty.getId.append <| .mkSimple (a ++ b ++ c ++ d)
             Lean.Elab.Command.elabCommand <| ← `(
               @[inline]
-              def $v2swzl4 (v : $v2Ty) : $v4Ty := ⟨$v2a, $v2b, $v2c, $v2d⟩
+              def $v2swzl4 (v : $v2Ty) : $v4Ty := .mk $v2a $v2b $v2c $v2d
             )
             Lean.addDocStringCore (← Lean.resolveGlobalConstNoOverload v2swzl4)
               s!"Creates a vector with `x := v.{a}, y := v.{b}, z := v.{c}, w := v.{d}`"
@@ -55,7 +56,7 @@ run_cmd
         let v3swzl2 := Lean.mkIdent <| v3Ty.getId.append <| .mkSimple (a ++ b)
         Lean.Elab.Command.elabCommand <| ← `(
           @[inline]
-          def $v3swzl2 (v : $v3Ty) : $v2Ty := ⟨$v3a, $v3b⟩
+          def $v3swzl2 (v : $v3Ty) : $v2Ty := .mk $v3a $v3b
         )
         Lean.addDocStringCore (← Lean.resolveGlobalConstNoOverload v3swzl2)
           s!"Creates a vector with `x := v.{a}, y := v.{b}`"
@@ -64,7 +65,7 @@ run_cmd
           let v3swzl3 := Lean.mkIdent <| v3Ty.getId.append <| .mkSimple (a ++ b ++ c)
           Lean.Elab.Command.elabCommand <| ← `(
             @[inline]
-            def $v3swzl3 (v : $v3Ty) : $v3Ty := ⟨$v3a, $v3b, $v3c⟩
+            def $v3swzl3 (v : $v3Ty) : $v3Ty := .mk $v3a $v3b $v3c
           )
           Lean.addDocStringCore (← Lean.resolveGlobalConstNoOverload v3swzl3)
             s!"Creates a vector with `x := v.{a}, y := v.{b}, z := v.{c}`"
@@ -73,7 +74,7 @@ run_cmd
             let v3swzl4 := Lean.mkIdent <| v3Ty.getId.append <| .mkSimple (a ++ b ++ c ++ d)
             Lean.Elab.Command.elabCommand <| ← `(
               @[inline]
-              def $v3swzl4 (v : $v3Ty) : $v4Ty := ⟨$v3a, $v3b, $v3c, $v3d⟩
+              def $v3swzl4 (v : $v3Ty) : $v4Ty := .mk $v3a $v3b $v3c $v3d
             )
             Lean.addDocStringCore (← Lean.resolveGlobalConstNoOverload v3swzl4)
               s!"Creates a vector with `x := v.{a}, y := v.{b}, z := v.{c}, w := v.{d}`"
@@ -85,7 +86,7 @@ run_cmd
         let v4swzl2 := Lean.mkIdent <| v4Ty.getId.append <| .mkSimple (a ++ b)
         Lean.Elab.Command.elabCommand <| ← `(
           @[inline]
-          def $v4swzl2 (v : $v4Ty) : $v2Ty := ⟨$v4a, $v4b⟩
+          def $v4swzl2 (v : $v4Ty) : $v2Ty := .mk $v4a $v4b
         )
         Lean.addDocStringCore (← Lean.resolveGlobalConstNoOverload v4swzl2)
           s!"Creates a vector with `x := v.{a}, y := v.{b}`"
@@ -94,7 +95,7 @@ run_cmd
           let v4swzl3 := Lean.mkIdent <| v4Ty.getId.append <| .mkSimple (a ++ b ++ c)
           Lean.Elab.Command.elabCommand <| ← `(
             @[inline]
-            def $v4swzl3 (v : $v4Ty) : $v3Ty := ⟨$v4a, $v4b, $v4c⟩
+            def $v4swzl3 (v : $v4Ty) : $v3Ty := .mk $v4a $v4b $v4c
           )
           Lean.addDocStringCore (← Lean.resolveGlobalConstNoOverload v4swzl3)
             s!"Creates a vector with `x := v.{a}, y := v.{b}, z := v.{c}`"
@@ -103,7 +104,7 @@ run_cmd
             let v4swzl4 := Lean.mkIdent <| v4Ty.getId.append <| .mkSimple (a ++ b ++ c ++ d)
             Lean.Elab.Command.elabCommand <| ← `(
               @[inline]
-              def $v4swzl4 (v : $v4Ty) : $v4Ty := ⟨$v4a, $v4b, $v4c, $v4d⟩
+              def $v4swzl4 (v : $v4Ty) : $v4Ty := .mk $v4a $v4b $v4c $v4d
             )
             Lean.addDocStringCore (← Lean.resolveGlobalConstNoOverload v4swzl4)
               s!"Creates a vector with `x := v.{a}, y := v.{b}, z := v.{c}, w := v.{d}`"
