@@ -22,7 +22,7 @@ structure BVector2 where
   `x` is the first bit and `y` is the second.
   -/
   bits : UInt8
-  /-- Only first 2 bits may be set. -/
+  /-- Only the first 2 bits may be set. -/
   length2 : bits &&& 0b11 = bits
 deriving DecidableEq
 

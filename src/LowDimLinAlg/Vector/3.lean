@@ -22,7 +22,7 @@ structure BVector3 where
   `x` is the first bit, `y` - the second, `z` - the third.
   -/
   bits : UInt8
-  /-- Only first 3 bits may be set. -/
+  /-- Only the first 3 bits may be set. -/
   length3 : bits &&& 0b111 = bits
 deriving DecidableEq
 
