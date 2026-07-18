@@ -1,6 +1,6 @@
 module
 
-public section
+@[expose] public section
 
 namespace LowDimLinAlg
 
@@ -14,15 +14,49 @@ inductive Axis3 where
 | x | y | z
 deriving DecidableEq, Repr, Inhabited, Hashable
 
+/-- 4D axis. -/
+inductive Axis4 where
+| x | y | z | w
+deriving DecidableEq, Repr, Inhabited, Hashable
+
 /-- Converts a 2D axis to 3D. -/
-@[expose, inline]
+@[inline]
 def Axis2.toAxis3 : Axis2 → Axis3
 | .x => .x
 | .y => .y
 
+/-- Converts a 2D axis to 4D. -/
+@[inline]
+def Axis2.toAxis4 : Axis2 → Axis4
+| .x => .x
+| .y => .y
+
+/-- Converts a 3D axis to 4D. -/
+@[inline]
+def Axis3.toAxis4 : Axis3 → Axis4
+| .x => .x
+| .y => .y
+| .z => .z
+
 /-- Converts a 3D axis to 2D returning `none` for `z`. -/
-@[expose, inline]
+@[inline]
 def Axis3.toAxis2 : Axis3 → Option Axis2
 | .x => some .x
 | .y => some .y
 | .z => none
+
+/-- Converts a 4D axis to 2D returning `none` for `z` and `w`. -/
+@[inline]
+def Axis4.toAxis2 : Axis4 → Option Axis2
+| .x => some .x
+| .y => some .y
+| .z => none
+| .w => none
+
+/-- Converts a 4D axis to 3D returning `none` for `w`. -/
+@[inline]
+def Axis4.toAxis3 : Axis4 → Option Axis3
+| .x => some .x
+| .y => some .y
+| .z => some .z
+| .w => none
