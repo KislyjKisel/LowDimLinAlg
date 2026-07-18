@@ -60,3 +60,6 @@ def Axis4.toAxis3 : Axis4 → Option Axis3
 | .y => some .y
 | .z => some .z
 | .w => none
+
+instance : Coe Axis2 Axis3 := ⟨Axis2.toAxis3⟩
+instance : Coe Axis3 Axis4 := ⟨Axis3.toAxis4⟩
