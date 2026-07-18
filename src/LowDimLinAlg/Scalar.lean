@@ -36,7 +36,7 @@ run_cmd
       @[inline]
       def clampMagnitude (limit value : $sTy) : $sTy :=
         if 1 / limit < 0 || limit.isNaN
-          then panic! "limit is negative or NaN. limit = {limit}"
+          then panic! "limit is negative or NaN: {limit}"
           else if value.isNaN
             then value
             else Max.max (-limit) (Min.min value limit)

@@ -157,11 +157,6 @@ run_cmd
       def lengthSqr (v : $v2Ty) : $sTy :=
         dot v v
 
-      /-- Squared distance between two points represented by vectors from any third point. -/
-      @[inline]
-      def distanceSqr (a b : $v2Ty) : $sTy :=
-        lengthSqr <| a - b
-
       end $v2Ty
     )
 
@@ -287,22 +282,22 @@ run_cmd
 
       /-- Componentwise "less than". -/
       @[inline]
-      def lt (a b : $v2Ty) : BVector2 :=
+      def lt' (a b : $v2Ty) : BVector2 :=
         .mk (a.x < b.x) (a.y < b.y)
 
       /-- Componentwise "less than or equal to". -/
       @[inline]
-      def le (a b : $v2Ty) : BVector2 :=
+      def le' (a b : $v2Ty) : BVector2 :=
         .mk (a.x <= b.x) (a.y <= b.y)
 
       /-- Componentwise "greater than". -/
       @[inline]
-      def gt (a b : $v2Ty) : BVector2 :=
+      def gt' (a b : $v2Ty) : BVector2 :=
         .mk (a.x > b.x) (a.y > b.y)
 
       /-- Componentwise "greater than or equal to". -/
       @[inline]
-      def ge (a b : $v2Ty) : BVector2 :=
+      def ge' (a b : $v2Ty) : BVector2 :=
         .mk (a.x >= b.x) (a.y >= b.y)
 
       /-- Returns `true` if application of `f` to *any* of the components returns `true`. -/
@@ -314,6 +309,29 @@ run_cmd
       @[inline]
       def all (f : $sTy → Bool) (v : $v2Ty) : Bool :=
         f v.x && f v.y
+
+      /-- Whether componentwise "less than" is true on all axes. -/
+      @[inline]
+      def lt (a b : $v2Ty) : Prop :=
+        a.x < b.x ∧ a.y < b.y
+
+      /-- Whether componentwise "less than or equal to" is true on all axes. -/
+      @[inline]
+      def le (a b : $v2Ty) : Prop :=
+        a.x <= b.x ∧ a.y <= b.y
+
+      @[inline] instance : LT $v2Ty := ⟨lt⟩
+      @[inline] instance : LE $v2Ty := ⟨le⟩
+
+      @[inline]
+      instance : DecidableLT $v2Ty := fun a b => by
+        unfold LT.lt instLT lt
+        infer_instance
+
+      @[inline]
+      instance : DecidableLE $v2Ty := fun a b => by
+        unfold LE.le instLE le
+        infer_instance
 
       end $v2Ty
     )
@@ -328,6 +346,8 @@ run_cmd
     let sSign := cx.scalarExtMember "sign"
     let sSqrt := cx.scalarMember "sqrt"
     let sIsFinite := cx.scalarMember "isFinite"
+    let sAtan2 := cx.scalarMember "atan2"
+    let sAbs := cx.scalarMember "abs"
     Lean.Elab.Command.elabCommand <| ← `(
       namespace $v2Ty
 
@@ -344,6 +364,24 @@ run_cmd
       /-- All components set to negative infinity. -/
       @[inline]
       def negInf : $v2Ty := splat $sNegInf
+
+      /--
+      Creates a unit vector from `angle`.
+
+      Angle is counterclockwise if Y is up and X is down.
+      -/
+      @[inline]
+      def fromAngle (angle : $sTy) : $v2Ty :=
+        ⟨angle.cos, angle.sin⟩
+
+      /--
+      Creates a vector from `length` and `angle`.
+
+      Angle is counterclockwise if Y is up and X is down.
+      -/
+      @[inline]
+      def fromLengthAngle (length angle : $sTy) : $v2Ty :=
+        length * fromAngle angle
 
       /-- Component-wise clamping of components. -/
       @[inline]
@@ -363,7 +401,7 @@ run_cmd
       /-- Distance between two points represented by vectors from any third point. -/
       @[inline]
       def distance (a b : $v2Ty) : $sTy :=
-        $sSqrt <| distanceSqr a b
+        length (a - b)
 
       /--
       Normalizes vector to the length of `1`.
@@ -380,13 +418,266 @@ run_cmd
       /--
       Normalizes vector to the length of `1`.
 
-      Panics if the resulting vector is not finite.
+      Panics in debug if any of `v/|v|` components is not finite.
       -/
       @[inline]
-      def normalize! (v : $v2Ty) : $v2Ty :=
-        match normalize? v with
-        | none => panic! "normalized vector is not finite, vector = {v}"
-        | some v' => v'
+      def normalize (v : $v2Ty) : $v2Ty :=
+        let v' := v * (1 / v.length)
+        debug_assert! v'.any <| not ∘ $sIsFinite
+        v'
+
+      /-- Checks whether the length of `v` is 1. -/
+      @[inline]
+      def isNormalized (maxSqrDelta : $sTy := 2e-4) (v : $v2Ty) : Bool :=
+        $sAbs (v.lengthSqr - 1) <= maxSqrDelta
+
+      /--
+      Returns angle between positive X axis and the ray defined by vector `v` and origin `(0, 0)`.
+
+      Panics in debug if the length of `v` is zero.
+      -/
+      @[inline]
+      def angle (v : $v2Ty) : $sTy :=
+        debug_assert! v.length > 0
+        $sAtan2 v.y v.x
+
+      /-- Angle between two vectors (counterclockwise if Y is up and X is right). -/
+      @[inline]
+      def angleBetween (a b : $v2Ty) : $sTy :=
+        $sAtan2 (a.x * b.y - a.y * b.x) (dot a b)
+
+      /-- Angle between positive X axis and a line from point `a` to `b`. -/
+      @[inline]
+      def lineAngle (a b : $v2Ty) : $sTy :=
+        angle (b - a)
+
+      /--
+      Projection of `a` onto `b`.
+
+      Panics in debug if `1/|b|²` is not finite.
+      -/
+      @[inline]
+      def projectOnto (a b : $v2Ty) : $v2Ty :=
+        let invBSqrLen := 1 / b.lengthSqr
+        debug_assert! $sIsFinite invBSqrLen
+        b * (dot a b) * invBSqrLen
+
+      /--
+      Projection of `a` onto `b`.
+
+      Panics in debug if `b` is not normalized.
+      -/
+      @[inline]
+      def projectOntoNormalized (a b : $v2Ty) : $v2Ty :=
+        debug_assert! b.isNormalized
+        b * (dot a b)
+
+      /--
+      Rejection of `a` from `b`.
+
+      Rejection is the part of `a` that is missing from its projection
+      (`a = rejection + projection`).
+
+      Panics in debug if `1/|b|²` is not finite.
+      -/
+      @[inline]
+      def rejectFrom (a b : $v2Ty) : $v2Ty :=
+        a - projectOnto a b
+
+      /--
+      Rejection of `a` from `b`.
+
+      Rejection is the part of `a` that is missing from its projection
+      (`a = rejection + projection`).
+
+      Panics in debug if `b` is not normalized.
+      -/
+      @[inline]
+      def rejectFromNormalized (a b : $v2Ty) : $v2Ty :=
+        a - projectOntoNormalized a b
+
+      /--
+      Performs a linear interpolation between `start` and `end` based on `t`.
+
+      When `t` is `0`, the result will be `start`.
+      When `t` is `1`, the result will be `end`.
+
+      When `value` is outside of the range, the result is linearly extrapolated.
+
+      Returns `NaN` if `value`, `start` or `end` is NaN (for each axis).
+      -/
+      @[inline]
+      def lerp (start «end» : $v2Ty) (t : $sTy) : $v2Ty :=
+        start + t * («end» - start)
+
+      /--
+      Reflect `v` across a line with a `normal`.
+
+      Panics in debug if `normal` is not normalized.
+      -/
+      @[inline]
+      def reflectAlongNormal (normal v : $v2Ty) : $v2Ty :=
+        debug_assert! normal.isNormalized
+        v - (2 * dot v normal) * normal
+
+      /--
+      Reflect `v` across a line with a perpendicular `perp`.
+
+      Panics in debug if `2/|perp|²` is not finite.
+      -/
+      @[inline]
+      def reflectAlong (perp v : $v2Ty) : $v2Ty :=
+        let k := 2 / perp.lengthSqr
+        debug_assert! $sIsFinite k
+        v - k * dot v perp * perp
+
+      /--
+      Reflect `v` across a line with a `normal`.
+
+      Assumes `normal` is normalized.
+      -/
+      @[inline]
+      def reflectAlong' (normal v : $v2Ty) : $v2Ty :=
+        v - (2 * dot v normal) * normal
+
+      /--
+      Reflect `v` across a `line`.
+
+      Panics in debug if `line` is not normalized.
+      -/
+      @[inline]
+      def reflectAcrossNormal (line v : $v2Ty) : $v2Ty :=
+        debug_assert! line.isNormalized
+        2 * dot v line * line - v
+
+      /--
+      Reflect `v` across a `line`.
+
+      Panics in debug if `2/|line|²` is not finite.
+      -/
+      @[inline]
+      def reflectAcross (line v : $v2Ty) : $v2Ty :=
+        let k := 2 / line.lengthSqr
+        debug_assert! $sIsFinite k
+        k * dot v line * line - v
+
+      /--
+      Reflect `v` across a `line`.
+
+      Assumes `line` is normalized.
+      -/
+      @[inline]
+      def reflectAcross' (line v : $v2Ty) : $v2Ty :=
+        2 * dot v line * line - v
+
+      /-- Rotate `v` by `angle`. -/
+      @[inline]
+      def rotate (angle : $sTy) (v : $v2Ty) : $v2Ty :=
+        let cos := angle.cos
+        let sin := angle.sin
+        ⟨v.x * cos - v.y * sin, v.x * sin + v.y * cos⟩
+
+      /--
+      Move `v` towards `target`.
+
+      Panics in debug if `maxDistance` is negative.
+      -/
+      @[inline]
+      def moveTowards (maxDistance : $sTy) (target v : $v2Ty) : $v2Ty :=
+        debug_assert! maxDistance >= 0
+        let delta := target - v
+        let distanceSqr := delta.lengthSqr
+        if distanceSqr <= maxDistance * maxDistance
+          then target
+          else v + delta * (maxDistance / distanceSqr.sqrt)
+
+      /--
+      Compute the direction of a refracted ray where
+      * `v`: direction of the incoming ray
+      * `n`: normal vector of the interface of two optical media
+      * `r`: the ratio of the refractive index of the medium from where the ray comes
+        to the refractive index of the medium on the other side of the surface
+
+      Panics in debug if either `v` or `n` is not normalized.
+      -/
+      @[inline]
+      def refract (r : $sTy) (n v : $v2Ty) : $v2Ty :=
+        debug_assert! n.isNormalized && v.isNormalized
+        let «v∙n» := dot v n
+        let d := 1 - r * r * (1 - «v∙n» * «v∙n»)
+        if d >= 0
+          then (v * r) - (n * (r * «v∙n» + d.sqrt))
+          else .zero
+
+      /--
+      Checks whether absolute difference between corresponding
+      component values is less than or equal to `maxDifference`.
+      -/
+      @[inline]
+      def almostEqual (maxDifference : $sTy) (a b : $v2Ty) : Bool :=
+        (a - b).all <| (· <= maxDifference) ∘ $sAbs
+
+      /--
+      Changes vector length to be between `min` and `max`.
+
+      Panics in debug if either `min` or `max` is negative, or if `min > max`.
+      -/
+      @[inline]
+      def clampLength (min max : $sTy) (v : $v2Ty) : $v2Ty :=
+        debug_assert! min >= 0 && max >= 0 && min <= max
+        let lenSqr := lengthSqr v
+        if lenSqr < min * min then
+          v * (min / lenSqr.sqrt)
+        else if lenSqr > max * max then
+          v * (max / lenSqr.sqrt)
+        else
+          v
+
+      /--
+      Changes vector length to be not less than `min`.
+
+      Panics in debug if `min` is negative.
+      -/
+      @[inline]
+      def clampLengthMin (min : $sTy) (v : $v2Ty) : $v2Ty :=
+        debug_assert! min >= 0
+        let lenSqr := lengthSqr v
+        if lenSqr < min * min
+          then v * (min / lenSqr.sqrt)
+          else v
+
+      /--
+      Changes vector length to be not greater than `max`.
+
+      Panics in debug if `max` is negative.
+      -/
+      @[inline]
+      def clampLengthMax (max : $sTy) (v : $v2Ty) : $v2Ty :=
+        debug_assert! max >= 0
+        let lenSqr := lengthSqr v
+        if lenSqr > max * max
+          then v * (max / lenSqr.sqrt)
+          else v
+
+      /-- Returns vector with the direction of `v` and length of `target`. -/
+      @[inline]
+      def resizeAs (target v : $v2Ty) : $v2Ty :=
+        v * (target.lengthSqr / v.lengthSqr).sqrt
+
+      /--
+      Rotates `v` towards `target` up to `maxRotation` radians.
+
+      Panics in debug if `maxRotation` is negative.
+      -/
+      @[inline]
+      def rotateTowards (maxRotation : $sTy) (target v : $v2Ty) : $v2Ty :=
+        debug_assert! maxRotation >= 0
+        let angle := v.angleBetween target
+        let angleAbs := angle.abs
+        dbg_trace angleAbs
+        if angleAbs <= maxRotation
+          then resizeAs v target
+          else v.rotate <| if angle < 0 then -maxRotation else maxRotation
 
       end $v2Ty
     )
@@ -449,14 +740,59 @@ run_cmd
 run_cmd
   Meta.forEachScalar Meta.signed fun cx => do
     let v2Ty := cx.structure "Vector2"
-    let abs := cx.scalarMember "abs"
+    let sTy := cx.scalarType
+    let sAbs := cx.scalarMember "abs"
     Lean.Elab.Command.elabCommand <| ← `(
       namespace $v2Ty
+
+      /-- Vector `v` rotated by 90 degrees counterclockwise (if Y is up and X is right). -/
+      @[inline]
+      def perpCCW (v : $v2Ty) : $v2Ty := ⟨-v.y, v.x⟩
+
+      /-- Vector `v` rotated by 90 degrees clockwise (if Y is up and X is right). -/
+      @[inline]
+      def perpCW (v : $v2Ty) : $v2Ty := ⟨v.y, -v.x⟩
 
       /-- Computes absolute values of components. -/
       @[inline]
       def abs (v : $v2Ty) : $v2Ty :=
-        ⟨$abs v.x, $abs v.y⟩
+        ⟨$sAbs v.x, $sAbs v.y⟩
+
+      /-- Squared distance between two points represented by vectors from any third point. -/
+      @[inline]
+      def distanceSqr (a b : $v2Ty) : $sTy :=
+        lengthSqr <| a - b
+
+      /--
+      Cross product of two 2D vectors extended to 3D by setting Z to 0.
+      Returns Z of the resulting vector. Its X and Y are 0.
+
+      Equal to the area of the parallelogram between the input vectors.
+      Sign represents direction of rotation from `a` to `b`
+      (negative means clockwise if Y is up and X is right).
+
+      Equal to `|a||b| sin θ` where `θ` is the angle between vectors.
+      -/
+      @[inline]
+      def cross (a b : $v2Ty) : $sTy :=
+        a.x * b.y - a.y * b.x
+
+      end $v2Ty
+    )
+
+run_cmd
+  Meta.forEachScalar Meta.unsignedIntegers fun cx => do
+    let v2Ty := cx.structure "Vector2"
+    let sTy := cx.scalarType
+    Lean.Elab.Command.elabCommand <| ← `(
+      namespace $v2Ty
+
+      /-- Squared distance between two points represented by vectors from any third point. -/
+      @[inline]
+      def distanceSqr (a b : $v2Ty) : $sTy :=
+        let x := if a.x >= b.x then a.x - b.x else b.x - a.x
+        let y := if a.y >= b.y then a.y - b.y else b.y - a.y
+        x * x + y * y
 
       end $v2Ty
     )
