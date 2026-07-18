@@ -685,6 +685,7 @@ run_cmd
 run_cmd
   Meta.forEachScalar Meta.integers fun cx => do
     let v2Ty := cx.structure "Vector2"
+    let sTy := cx.scalarType
     Lean.Elab.Command.elabCommand <| ← `(
       namespace $v2Ty
 
@@ -715,10 +716,19 @@ run_cmd
       @[inline] instance : XorOp $v2Ty := ⟨xor⟩
       @[inline] instance : Complement $v2Ty := ⟨complement⟩
 
-      /-- Component-wise clamping of components. -/
+      /-- Componentwise clamping of components. -/
       @[inline]
       def clamp (min max v : $v2Ty) : $v2Ty :=
         ⟨Max.max min.x (Min.min v.x max.x), Max.max min.y (Min.min v.y max.y)⟩
+
+      /-- Componentwise modulo. -/
+      @[inline]
+      def mod (a b : $v2Ty) : $v2Ty :=
+        ⟨a.x % b.x, a.y % b.y⟩
+
+      @[inline] instance : Mod $v2Ty := ⟨mod⟩
+      @[inline] instance : HMod $v2Ty $sTy $v2Ty := ⟨fun v s => ⟨v.x % s, v.y % s⟩⟩
+      @[inline] instance : HMod $sTy $v2Ty $v2Ty := ⟨fun s v => ⟨s % v.x, s % v.y⟩⟩
 
       end $v2Ty
     )
