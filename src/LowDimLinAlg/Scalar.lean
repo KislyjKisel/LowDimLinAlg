@@ -17,29 +17,27 @@ run_cmd
       Restricts a value to a certain interval.
       Returns NaN if `value` is NaN, `min` if `value` < `min`, `max` if `value` > `max` and `value` otherwise.
 
-      Panics if `min` > `max`, `min` is NaN, or `max` is NaN.
+      Panics in debug if `min` > `max`, `min` is NaN, or `max` is NaN.
       -/
       @[inline]
       def clamp (min max value : $sTy) : $sTy :=
-        if min.isNaN || max.isNaN || min > max
-          then panic! "min > max, or either is NaN. min = {min}, max = {max}"
-          else if value.isNaN
-            then value
-            else Max.max min (Min.min value max)
+        debug_assert! !min.isNaN && !max.isNaN && min <= max
+        if value.isNaN
+          then value
+          else Max.max min (Min.min value max)
 
       /--
       Restricts a value to an interval centered around zero.
       Returns NaN if `value` is NaN, `-limit` if `value` < `-limit`, `limit` if `value` > `limit` and `value` otherwise.
 
-      Panics if `limit` is negative or NaN.
+      Panics in debug if `limit` is negative or NaN.
       -/
       @[inline]
       def clampMagnitude (limit value : $sTy) : $sTy :=
-        if 1 / limit < 0 || limit.isNaN
-          then panic! "limit is negative or NaN: {limit}"
-          else if value.isNaN
-            then value
-            else Max.max (-limit) (Min.min value limit)
+        debug_assert! 1 / limit >= 0 && !limit.isNaN
+        if value.isNaN
+          then value
+          else Max.max (-limit) (Min.min value limit)
 
       /-- Clamps `value` between 0 and 1. -/
       @[inline]
