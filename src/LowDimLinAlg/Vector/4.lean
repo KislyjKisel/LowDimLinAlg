@@ -2,6 +2,7 @@ module
 
 public import LowDimLinAlg.Axis
 public import LowDimLinAlg.Scalar
+public import LowDimLinAlg.Vector.Boolean
 
 import LowDimLinAlg.Meta.ForEachScalar
 
@@ -10,51 +11,6 @@ import LowDimLinAlg.Meta.ForEachScalar
 set_option hygiene false
 
 namespace LowDimLinAlg
-
-structure BVector4 where
-  /--
-  Creates vector from bitwise representation where
-  `x` is the first bit, `y` - the second, `z` - the third, `w` - the fourth.
-  -/
-  ofBits ::
-  /--
-  Bitwise representation of the vector where
-  `x` is the first bit, `y` - the second, `z` - the third, `w` - the fourth..
-  -/
-  bits : UInt8
-  /-- Only the first 4 bits may be set. -/
-  length4 : bits &&& 0b1111 = bits
-deriving DecidableEq
-
-@[inline]
-instance : Inhabited BVector4 :=
-  ⟨{ bits := 0, length4 := by decide }⟩
-
-/-- Creates vector from components. -/
-@[inline]
-def BVector4.mk (x y z w : Bool) : BVector4 :=
-  let xBit : UInt8 := cond x 1 0
-  let yBit : UInt8 := cond y 1 0
-  let zBit : UInt8 := cond z 1 0
-  let wBit : UInt8 := cond w 1 0
-  .ofBits (xBit ||| yBit <<< 1 ||| zBit <<< 2 ||| wBit <<< 3) <| by
-    cases x <;> cases y <;> cases z <;> cases w <;> decide
-
-@[inline]
-def BVector4.x (v : BVector4) : Bool :=
-  v.bits &&& 0b0001 != 0
-
-@[inline]
-def BVector4.y (v : BVector4) : Bool :=
-  v.bits &&& 0b0010 != 0
-
-@[inline]
-def BVector4.z (v : BVector4) : Bool :=
-  v.bits &&& 0b0100 != 0
-
-@[inline]
-def BVector4.w (v : BVector4) : Bool :=
-  v.bits &&& 0b1000 != 0
 
 run_cmd
   Meta.forEachScalar Meta.numbers fun cx => do
