@@ -5,7 +5,7 @@ public meta import Std.Data.Iterators
 
 public meta section
 
-namespace LowDimLinAlg.Meta
+namespace LowDimLinAlg.Internal
 
 structure Dimension where
   index : Nat

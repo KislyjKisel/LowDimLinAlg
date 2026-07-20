@@ -1,6 +1,8 @@
 module
 
-import LowDimLinAlg.Meta.Dimensionalities
+public import LowDimLinAlg.Vector.Types
+
+import LowDimLinAlg.Internal.Dimensionalities
 
 @[expose] public section
 
@@ -8,27 +10,15 @@ set_option hygiene false
 
 namespace LowDimLinAlg
 
+open Internal
+
 run_cmd
-  for dims in Meta.dimensionalities 2 4 do
+  for dims in dimensionalities 2 4 do
     let bvName := Lean.Name.mkSimple <| "BVector" ++ toString dims.size
     let bvTy := Lean.mkIdent bvName
     let bvMask := Lean.Syntax.mkNatLit <| (1 <<< dims.size) - 1
     let dimsSizeLit := Lean.Syntax.mkNatLit dims.size
     Lean.Elab.Command.elabCommand <| ← `(
-      /--
-      Boolean vector.
-
-      Stored as a single `UInt8` with each component `i` represented by bit `1 <<< i`.
-      -/
-      structure $bvTy where
-        /-- Creates a vector from its bitwise representation. -/
-        ofBits ::
-        /-- Bitwise representation of the vector. -/
-        bits : UInt8
-        /-- Only the significant bits may be set. -/
-        and_mask_eq_self : bits &&& $bvMask = bits
-      deriving DecidableEq
-
       @[inline]
       instance : Inhabited $bvTy :=
         ⟨{ bits := 0, and_mask_eq_self := by decide }⟩
@@ -55,16 +45,6 @@ run_cmd
             Std.Format.joinSep ["length2", ":=", "by", "decide"] " ",
           ]
           Std.Format.bracket "{" (Std.Format.joinSep fields <| "," ++ Std.Format.line) "}"
-
-      /-- All components set to `false`. -/
-      @[inline]
-      protected def false : $bvTy :=
-        .ofBits 0 (by decide)
-
-      /-- All components set to `true`. -/
-      @[inline]
-      protected def true : $bvTy :=
-        .ofBits $bvMask (by decide)
 
       /--
       Creates vector from bitwise representation

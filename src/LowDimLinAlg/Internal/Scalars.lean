@@ -4,7 +4,7 @@ public meta import Lean.Elab.Command
 
 public meta section
 
-namespace LowDimLinAlg.Meta
+namespace LowDimLinAlg.Internal
 
 inductive ScalarKind where
 | unsignedInteger
