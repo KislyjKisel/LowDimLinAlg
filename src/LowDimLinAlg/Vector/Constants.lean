@@ -1,5 +1,6 @@
 module
 
+public import LowDimLinAlg.Scalar
 public import LowDimLinAlg.Vector.Types
 
 import LowDimLinAlg.Internal.Dimensionalities
@@ -36,6 +37,20 @@ run_cmd
           @[inline]
           def negOne : $vTy :=
             ⟨$(Array.replicate dims.size <| Lean.Syntax.mkApp (Lean.mkIdent ``Neg.neg) <| #[lit1]),*⟩
+        )
+      if cx.isFloat then
+        elabCommand <| ← `(
+          /-- All components set to NaN. -/
+          @[inline]
+          def nan : $vTy := ⟨$(Array.replicate dims.size (app ``Div.div #[lit0, lit0])),*⟩
+
+          /-- All components set to positive infinity. -/
+          @[inline]
+          def inf : $vTy := ⟨$(Array.replicate dims.size (cx.scalarExtMember "inf")),*⟩
+
+          /-- All components set to negative infinity. -/
+          @[inline]
+          def negInf : $vTy := ⟨$(Array.replicate dims.size (cx.scalarExtMember "negInf")),*⟩
         )
       if cx.isBoolean then
         elabCommand <| ← `(

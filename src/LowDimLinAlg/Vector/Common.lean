@@ -24,7 +24,7 @@ run_cmd
     let bvTy := mkIdent <| Name.mkSimple <| "BVector" ++ toString dims.size
     scalars.forM fun cx => do
       let sTy := cx.scalarType
-      let vTy := mkIdent <| Name.mkSimple <| cx.scalarPrefix ++ "Vector" ++ toString dims.size
+      let vTy := cx.structure <| "Vector" ++ toString dims.size
       let qIsNaN := Syntax.mkApp (cx.scalarMember "isNaN") ∘ Array.singleton
       elabCommand <| ← `(
         namespace $vTy
@@ -167,155 +167,68 @@ run_cmd
               app ``cond #[qIsMaximal dim, dot axisTy.getId dim.str, r]
           )
 
-          /-- Returns `true` if application of `f` to *any* of the components returns `true`. -/
-          @[inline]
-          def any (f : $sTy → Bool) (v : $vTy) : Bool :=
-            $(foldBinopL dims ``Bool.or fun dim => app `f #[vget `v dim])
+        /-- Returns `true` if application of `f` to *any* of the components returns `true`. -/
+        @[inline]
+        def any (f : $sTy → Bool) (v : $vTy) : Bool :=
+          $(foldBinopL dims ``Bool.or fun dim => app `f #[vget `v dim])
 
-          /-- Returns `true` if application of `f` to *each* component returns `true`. -/
-          @[inline]
-          def all (f : $sTy → Bool) (v : $vTy) : Bool :=
-            $(foldBinopL dims ``Bool.and fun dim => app `f #[vget `v dim])
+        /-- Returns `true` if application of `f` to *each* component returns `true`. -/
+        @[inline]
+        def all (f : $sTy → Bool) (v : $vTy) : Bool :=
+          $(foldBinopL dims ``Bool.and fun dim => app `f #[vget `v dim])
 
-          /-- Componentwise minimum. -/
-          @[inline]
-          def min (a b : $vTy) : $vTy :=
-            $(app `mk <| dims.map fun dim => app ``Min.min #[vget `a dim, vget `b dim])
+        /-- Componentwise minimum. -/
+        @[inline]
+        def min (a b : $vTy) : $vTy :=
+          $(app `mk <| dims.map fun dim => app ``Min.min #[vget `a dim, vget `b dim])
 
-          /-- Componentwise maximum. -/
-          @[inline]
-          def max (a b : $vTy) : $vTy :=
-            $(app `mk <| dims.map fun dim => app ``Max.max #[vget `a dim, vget `b dim])
+        /-- Componentwise maximum. -/
+        @[inline]
+        def max (a b : $vTy) : $vTy :=
+          $(app `mk <| dims.map fun dim => app ``Max.max #[vget `a dim, vget `b dim])
 
-          /-- Componentwise "less than". -/
-          @[inline]
-          def lt' (a b : $vTy) : $bvTy :=
-            $(app (bvTy.getId.str "mk") <| dims.map fun dim => app ``LT.lt #[vget `a dim, vget `b dim])
+        /-- Componentwise "less than". -/
+        @[inline]
+        def lt' (a b : $vTy) : $bvTy :=
+          $(app (bvTy.getId.str "mk") <| dims.map fun dim => app ``LT.lt #[vget `a dim, vget `b dim])
 
-          /-- Componentwise "less than or equal to". -/
-          @[inline]
-          def le' (a b : $vTy) : $bvTy :=
-            $(app (bvTy.getId.str "mk") <| dims.map fun dim => app ``LE.le #[vget `a dim, vget `b dim])
+        /-- Componentwise "less than or equal to". -/
+        @[inline]
+        def le' (a b : $vTy) : $bvTy :=
+          $(app (bvTy.getId.str "mk") <| dims.map fun dim => app ``LE.le #[vget `a dim, vget `b dim])
 
-          /-- Componentwise "greater than". -/
-          @[inline]
-          def gt' (a b : $vTy) : $bvTy :=
-            $(app (bvTy.getId.str "mk") <| dims.map fun dim => app ``LT.lt #[vget `b dim, vget `a dim])
+        /-- Componentwise "greater than". -/
+        @[inline]
+        def gt' (a b : $vTy) : $bvTy :=
+          $(app (bvTy.getId.str "mk") <| dims.map fun dim => app ``LT.lt #[vget `b dim, vget `a dim])
 
-          /-- Componentwise "greater than or equal to". -/
-          @[inline]
-          def ge' (a b : $vTy) : $bvTy :=
-            $(app (bvTy.getId.str "mk") <| dims.map fun dim => app ``LE.le #[vget `b dim, vget `a dim])
+        /-- Componentwise "greater than or equal to". -/
+        @[inline]
+        def ge' (a b : $vTy) : $bvTy :=
+          $(app (bvTy.getId.str "mk") <| dims.map fun dim => app ``LE.le #[vget `b dim, vget `a dim])
 
-          /-- Whether componentwise "less than" is true on all axes. -/
-          @[inline]
-          def lt (a b : $vTy) : Prop :=
-            $(foldBinopR dims ``And fun dim => app ``LT.lt #[vget `a dim, vget `b dim])
+        /-- Whether componentwise "less than" is true on all axes. -/
+        @[inline]
+        def lt (a b : $vTy) : Prop :=
+          $(foldBinopR dims ``And fun dim => app ``LT.lt #[vget `a dim, vget `b dim])
 
-          /-- Whether componentwise "less than or equal to" is true on all axes. -/
-          @[inline]
-          def le (a b : $vTy) : Prop :=
-            $(foldBinopR dims ``And fun dim => app ``LE.le #[vget `a dim, vget `b dim])
+        /-- Whether componentwise "less than or equal to" is true on all axes. -/
+        @[inline]
+        def le (a b : $vTy) : Prop :=
+          $(foldBinopR dims ``And fun dim => app ``LE.le #[vget `a dim, vget `b dim])
 
-          @[inline] instance : LT $vTy := ⟨lt⟩
-          @[inline] instance : LE $vTy := ⟨le⟩
+        @[inline] instance : LT $vTy := ⟨lt⟩
+        @[inline] instance : LE $vTy := ⟨le⟩
 
-          @[inline]
-          instance : DecidableLT $vTy := fun _ _ => by
-            unfold LT.lt instLT lt
-            infer_instance
+        @[inline]
+        instance : DecidableLT $vTy := fun _ _ => by
+          unfold LT.lt instLT lt
+          infer_instance
 
-          @[inline]
-          instance : DecidableLE $vTy := fun _ _ => by
-            unfold LE.le instLE le
-            infer_instance
+        @[inline]
+        instance : DecidableLE $vTy := fun _ _ => by
+          unfold LE.le instLE le
+          infer_instance
+
+        end $vTy
       )
-      if cx.isNumber then
-        elabCommand <| ← `(
-          /-- Creates a vector with results of applying `f` to each component. -/
-          @[inline]
-          def mapBool (f : $sTy → Bool) (v : $vTy) : $bvTy :=
-            $(app (bvTy.getId.str "mk") <| dims.map fun dim => app `f #[vget `v dim])
-
-          /-- Componentwise addition (integers wrap on underflow and overflow). -/
-          @[inline]
-          def add (a b : $vTy) : $vTy :=
-            $(app `mk <| dims.map fun dim => app ``Add.add #[vget `a dim, vget `b dim])
-
-          /-- Componentwise subtraction (integers wrap on underflow and overflow). -/
-          @[inline]
-          def sub (a b : $vTy) : $vTy :=
-            $(app `mk <| dims.map fun dim => app ``Sub.sub #[vget `a dim, vget `b dim])
-
-          /-- Componentwise multiplication (integers wrap on underflow and overflow). -/
-          @[inline]
-          def mul (a b : $vTy) : $vTy :=
-            $(app `mk <| dims.map fun dim => app ``Mul.mul #[vget `a dim, vget `b dim])
-
-          /-- Componentwise division (integers wrap on underflow and overflow). -/
-          @[inline]
-          def div (a b : $vTy) : $vTy :=
-            $(app `mk <| dims.map fun dim => app ``Div.div #[vget `a dim, vget `b dim])
-
-          /-- Negation of a vector. -/
-          @[inline]
-          def neg (v : $vTy) : $vTy :=
-            v.map (·.neg)
-
-          /-- Componentwise multiplication of a vector by a scalar (integers wrap on underflow and overflow). -/
-          @[inline]
-          def scale (s : $sTy) (v : $vTy) : $vTy :=
-            v.map (· * s)
-
-          @[inline] instance : Add $vTy := ⟨add⟩
-          @[inline] instance : Sub $vTy := ⟨sub⟩
-          @[inline] instance : Mul $vTy := ⟨mul⟩
-          @[inline] instance : Div $vTy := ⟨div⟩
-          @[inline] instance : Neg $vTy := ⟨neg⟩
-          @[inline] instance : SMul $sTy $vTy := ⟨scale⟩
-
-          @[inline] instance : HMul $vTy $sTy $vTy := ⟨fun v s ↦ v.scale s⟩
-          @[inline] instance : HMul $sTy $vTy $vTy := ⟨scale⟩
-          @[inline] instance : HDiv $vTy $sTy $vTy := ⟨fun v s ↦ v.scale (1 / s)⟩
-
-          @[inline]
-          instance : HDiv $sTy $vTy $vTy :=
-            ⟨fun s v ↦ ⟨$(dims.map fun dim => app ``Div.div #[mkIdent `s, vget `v dim]),*⟩⟩
-
-          @[inline]
-          instance : HAdd $sTy $vTy $vTy :=
-            ⟨fun s v ↦ ⟨$(dims.map fun dim => app ``Add.add #[mkIdent `s, vget `v dim]),*⟩⟩
-
-          @[inline]
-          instance : HAdd $vTy $sTy $vTy :=
-            ⟨fun v s ↦ ⟨$(dims.map fun dim => app ``Add.add #[vget `v dim, mkIdent `s]),*⟩⟩
-
-          @[inline]
-          instance : HSub $sTy $vTy $vTy :=
-            ⟨fun s v ↦ ⟨$(dims.map fun dim => app ``Sub.sub #[mkIdent `s, vget `v dim]),*⟩⟩
-
-          @[inline]
-          instance : HSub $vTy $sTy $vTy :=
-            ⟨fun v s ↦ ⟨$(dims.map fun dim => app ``Sub.sub #[vget `v dim, mkIdent `s]),*⟩⟩
-
-          /-- Sum of components. -/
-          @[inline]
-          def sum (v : $vTy) : $sTy :=
-            $(foldBinopL dims ``Add.add fun dim => vget `v dim)
-
-          /-- Product of components. -/
-          @[inline]
-          def product (v : $vTy) : $sTy :=
-            $(foldBinopL dims ``Mul.mul fun dim => vget `v dim)
-
-          /-- Dot product of two vectors. -/
-          @[inline]
-          def dot (a b : $vTy) : $sTy :=
-            $(foldBinopL dims ``Add.add fun dim => app ``Mul.mul #[vget `a dim, vget `b dim])
-
-          /-- Vector length squared. -/
-          @[inline]
-          def lengthSqr (v : $vTy) : $sTy :=
-            dot v v
-        )
-      elabCommand <| ← `(end $vTy)

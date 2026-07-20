@@ -1,6 +1,6 @@
 module
 
-import LowDimLinAlg.Meta.Scalars
+import LowDimLinAlg.Internal.Scalars
 
 @[expose] public section
 
@@ -9,7 +9,7 @@ set_option hygiene false
 namespace LowDimLinAlg
 
 run_cmd
-  Meta.scalars.forM fun cx => do
+  Internal.scalars.forM fun cx => do
     if !cx.isFloat then return
     let sTy := cx.scalarType
     Lean.Elab.Command.elabCommand <| ← `(

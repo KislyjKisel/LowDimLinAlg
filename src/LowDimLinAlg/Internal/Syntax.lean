@@ -29,3 +29,6 @@ def dot (var : Name) (member : String) : Ident :=
 
 def vget (var : Name) (dim : Dimension) : Ident :=
   dot var dim.str
+
+def lets (var : Ident) (value body : Lean.Term) : Elab.Command.CommandElabM Lean.Term :=
+  `(term|let $var:ident := $value:term; $body:term)
