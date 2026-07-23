@@ -1,8 +1,8 @@
 module
 
-public import LowDimLinAlg.Vector
+public import LowDimLinAlg.Vector.Boolean
 
-import LowDimLinAlg.Meta.ForEachScalar
+import LowDimLinAlg.Internal.Scalars
 
 @[expose] public section
 
@@ -11,10 +11,10 @@ set_option hygiene false
 namespace LowDimLinAlg
 
 run_cmd
-  Meta.forEachScalar Meta.scalars fun cx => do
-    let v2Ty := cx.structure "Vector2"
-    let v3Ty := cx.structure "Vector3"
-    let v4Ty := cx.structure "Vector4"
+  Internal.scalars.forM fun cx => do
+    let v2Ty : Lean.Ident := cx.structure "Vector2"
+    let v3Ty : Lean.Ident := cx.structure "Vector3"
+    let v4Ty : Lean.Ident := cx.structure "Vector4"
     let g (t : Lean.Ident) (k : String) : Lean.Elab.Command.CommandElabM (Lean.TSyntax `term) :=
       let accessor := Lean.mkIdent <| t.getId.append <| .mkSimple k
       `($accessor v)

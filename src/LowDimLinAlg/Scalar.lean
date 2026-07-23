@@ -64,7 +64,6 @@ run_cmd
 
       When `value` is `0`, the result will be `start`.
       When `value` is `1`, the result will be `end`.
-
       When `value` is outside of the range, the result is linearly extrapolated.
 
       Returns `NaN` if `value`, `start` or `end` is NaN.
@@ -78,7 +77,6 @@ run_cmd
 
       When `value` is equal to `start` the result will be `0`.
       When `value` is equal to `end` the result will be `1`.
-
       When `value` is outside of the range, the result is linearly extrapolated.
 
       If `start` and `end` are equal, the result will be either infinite or NaN.

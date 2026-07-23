@@ -7,5 +7,6 @@ public import LowDimLinAlg.Vector.Conversion
 public import LowDimLinAlg.Vector.Floats
 public import LowDimLinAlg.Vector.Integers
 public import LowDimLinAlg.Vector.Numbers
+public import LowDimLinAlg.Vector.Swizzling
 public import LowDimLinAlg.Vector.Types
 public import LowDimLinAlg.Vector.With

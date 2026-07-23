@@ -1,9 +1,8 @@
 module
 
-public import LowDimLinAlg.Vector.«3»
-public import LowDimLinAlg.Vector.«4»
+public import LowDimLinAlg.Vector.Numbers
 
-import LowDimLinAlg.Meta.ForEachScalar
+import LowDimLinAlg.Internal.Scalars
 
 @[expose] public section
 
@@ -12,13 +11,14 @@ set_option hygiene false
 namespace LowDimLinAlg
 
 run_cmd
-  Meta.forEachScalar Meta.floats fun cx => do
+  Internal.scalars.forM fun cx => do
+    if !cx.isFloat then return
     let sTy := cx.scalarType
     let qTy := cx.structure "Quaternion"
     let v3Ty := cx.structure "Vector3"
     let v4Ty := cx.structure "Vector4"
     Lean.Elab.Command.elabCommand <| ← `(
-      structure $qTy where
+      structure $qTy:ident where
         x : $sTy
         y : $sTy
         z : $sTy

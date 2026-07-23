@@ -42,6 +42,7 @@ run_cmd
       let vTy := cx.structure structureSuffix
       let sTy := cx.scalarType
       let sIsFinite := cx.scalarMember "isFinite"
+      let sLerp := cx.scalarExtMember "lerp"
       elabCommand <| ← `(
         namespace $vTy
 
@@ -53,7 +54,7 @@ run_cmd
         Panics in debug if for any axis `min` > `max`, `min` is NaN, or `max` is NaN.
         -/
         @[inline]
-        def clamp (min max v : $vTy) : $vTy :=
+        def clamp (v min max : $vTy) : $vTy :=
           ⟨$(dims.map fun dim => app (cx.scalarExtMember "clamp").getId <| #[`min, `max, `v].map (vget · dim)),*⟩
 
         /-- Componentwise sign (does not return zeros). -/
@@ -149,10 +150,9 @@ run_cmd
 
         When `t` is `0`, the result will be `start`.
         When `t` is `1`, the result will be `end`.
+        When `t` is outside of the range, the result is linearly extrapolated.
 
-        When `value` is outside of the range, the result is linearly extrapolated.
-
-        Returns `NaN` if `value`, `start` or `end` is NaN (for each axis).
+        Returns `NaN` if `t`, `start` or `end` is NaN (for each axis).
         -/
         @[inline]
         def lerp (start «end» : $vTy) (t : $sTy) : $vTy :=
@@ -164,7 +164,7 @@ run_cmd
         Panics in debug if `normal` is not normalized.
         -/
         @[inline]
-        def reflectAlongNormal (normal v : $vTy) : $vTy :=
+        def reflectAlongNormal (v normal : $vTy) : $vTy :=
           debug_assert! normal.isNormalized
           v - (2 * dot v normal) * normal
 
@@ -174,7 +174,7 @@ run_cmd
         Panics in debug if `2/|perp|²` is not finite.
         -/
         @[inline]
-        def reflectAlong (perp v : $vTy) : $vTy :=
+        def reflectAlong (v perp : $vTy) : $vTy :=
           let k := 2 / perp.lengthSqr
           debug_assert! $sIsFinite k
           v - k * dot v perp * perp
@@ -185,7 +185,7 @@ run_cmd
         Assumes `normal` is normalized.
         -/
         @[inline]
-        def reflectAlong' (normal v : $vTy) : $vTy :=
+        def reflectAlong' (v normal : $vTy) : $vTy :=
           v - (2 * dot v normal) * normal
 
         /--
@@ -194,7 +194,7 @@ run_cmd
         Panics in debug if `line` is not normalized.
         -/
         @[inline]
-        def reflectAcrossNormal (line v : $vTy) : $vTy :=
+        def reflectAcrossNormal (v line : $vTy) : $vTy :=
           debug_assert! line.isNormalized
           2 * dot v line * line - v
 
@@ -204,7 +204,7 @@ run_cmd
         Panics in debug if `2/|line|²` is not finite.
         -/
         @[inline]
-        def reflectAcross (line v : $vTy) : $vTy :=
+        def reflectAcross (v line : $vTy) : $vTy :=
           let k := 2 / line.lengthSqr
           debug_assert! $sIsFinite k
           k * dot v line * line - v
@@ -215,7 +215,7 @@ run_cmd
         Assumes `line` is normalized.
         -/
         @[inline]
-        def reflectAcross' (line v : $vTy) : $vTy :=
+        def reflectAcross' (v line : $vTy) : $vTy :=
           2 * dot v line * line - v
 
         /--
@@ -224,7 +224,7 @@ run_cmd
         Panics in debug if `maxDistance` is negative.
         -/
         @[inline]
-        def moveTowards (maxDistance : $sTy) (target v : $vTy) : $vTy :=
+        def moveTowards (v target : $vTy) (maxDistance : $sTy) : $vTy :=
           debug_assert! maxDistance >= 0
           let delta := target - v
           let distanceSqr := delta.lengthSqr
@@ -242,7 +242,7 @@ run_cmd
         Panics in debug if either `v` or `n` is not normalized.
         -/
         @[inline]
-        def refract (r : $sTy) (n v : $vTy) : $vTy :=
+        def refract (v n : $vTy) (r : $sTy) : $vTy :=
           debug_assert! n.isNormalized && v.isNormalized
           let «v∙n» := dot v n
           let d := 1 - r * r * (1 - «v∙n» * «v∙n»)
@@ -255,11 +255,11 @@ run_cmd
         component values is less than or equal to `maxDifference`.
         -/
         @[inline]
-        def almostEqual (maxDifference : $sTy) (a b : $vTy) : Bool :=
+        def almostEqual (a b : $vTy) (maxDifference : $sTy) : Bool :=
           (a - b).all <| (· <= maxDifference) ∘ $(cx.scalarMember "abs")
 
         /--
-        Changes vector length to be between `min` and `max`.
+        Changes the vector's length to be between `min` and `max`.
 
         Panics in debug if either `min` or `max` is negative, or if `min > max`.
         -/
@@ -275,7 +275,7 @@ run_cmd
             v
 
         /--
-        Changes vector length to be not less than `min`.
+        Changes the vector's length to be not less than `min`.
 
         Panics in debug if `min` is negative.
         -/
@@ -288,7 +288,7 @@ run_cmd
             else v
 
         /--
-        Changes vector length to be not greater than `max`.
+        Changes the vector's length to be not greater than `max`.
 
         Panics in debug if `max` is negative.
         -/
@@ -300,9 +300,14 @@ run_cmd
             then v * (max / lenSqr.sqrt)
             else v
 
-        /-- Returns vector with the direction of `v` and length of `target`. -/
+        /-- Returns a vector with the direction of `v` and length `s`. -/
         @[inline]
-        def resizeAs (target v : $vTy) : $vTy :=
+        def resize (s : $sTy) (v : $vTy) : $vTy :=
+          v * (s / v.length)
+
+        /-- Returns a vector with the direction of `v` and length of `target`. -/
+        @[inline]
+        def resizeAs (v target : $vTy) : $vTy :=
           v * (target.lengthSqr / v.lengthSqr).sqrt
       )
       if dims.size = 2 then
@@ -338,7 +343,7 @@ run_cmd
           /-- Angle between two vectors (counterclockwise if Y is up and X is right). -/
           @[inline]
           def angleBetween (a b : $vTy) : $sTy :=
-            $(cx.scalarMember "atan2") (a.x * b.y - a.y * b.x) (dot a b)
+            $(cx.scalarMember "atan2") (cross a b) (dot a b)
 
           /-- Angle between positive X axis and a line from point `a` to `b`. -/
           @[inline]
@@ -358,14 +363,124 @@ run_cmd
           Panics in debug if `maxRotation` is negative.
           -/
           @[inline]
-          def rotateTowards (maxRotation : $sTy) (target v : $vTy) : $vTy :=
+          def rotateTowards (v target : $vTy) (maxRotation : $sTy) : $vTy :=
+            debug_assert! maxRotation >= 0
+            let angle := v.angleBetween target
+            let angleAbs := angle.abs
+            dbg_trace angleAbs
+            if angleAbs <= maxRotation
+              then target.resizeAs v
+              else v.rotate <| if angle < 0 then -maxRotation else maxRotation
+        )
+      if dims.size = 3 then
+        elabCommand <| ← `(
+          /-- Angle between two vectors. -/
+          @[inline]
+          def angleBetween (a b : $vTy) : $sTy :=
+            $(cx.scalarMember "atan2") (cross a b).length (dot a b)
+
+          /--
+          Rotates a vector around an axis.
+          In a right-handed coordinate system the rotation is clockwise
+          when the axis is the view direction.
+
+          Panics in debug if `axis` is not normalized.
+          -/
+          def rotate (v axis : $vTy) (angle : $sTy) : $vTy :=
+            -- From `Raylib` with edits
+            debug_assert! axis.isNormalized
+            let angle := 0.5 * angle
+            let w := angle.sin * axis
+            let wv := cross w v
+            let wwv := cross w wv
+            v + 2 * angle.cos * wv + (2 : $sTy) * wwv
+
+          /--
+          Rotates a vector around the X axis.
+          In a right-handed coordinate system the rotation is clockwise
+          when the axis is the view direction.
+          -/
+          @[inline]
+          def rotateX (v : $vTy) (angle : $sTy) : $vTy :=
+            let sin := angle.sin
+            let cos := angle.cos
+            ⟨v.x, v.y * cos - v.z * sin, v.y * sin + v.z * cos⟩
+
+          /--
+          Rotates a vector around the Y axis.
+          In a right-handed coordinate system the rotation is clockwise
+          when the axis is the view direction.
+          -/
+          @[inline]
+          def rotateY (v : $vTy) (angle : $sTy) : $vTy :=
+            let sin := angle.sin
+            let cos := angle.cos
+            ⟨v.x * cos + v.z * sin, v.y, v.z * cos - v.x * sin⟩
+
+          /--
+          Rotates a vector around the Z axis.
+          In a right-handed coordinate system the rotation is clockwise
+          when the axis is the view direction.
+          -/
+          @[inline]
+          def rotateZ (v : $vTy) (angle : $sTy) : $vTy :=
+            let sin := angle.sin
+            let cos := angle.cos
+            ⟨v.x * cos - v.y * sin, v.x * sin + v.y * cos, v.z⟩
+
+          /--
+          Rotates `v` towards `target` up to `maxRotation` radians.
+
+          Panics in debug if `maxRotation` is negative.
+          Also panics in debug if the angle between vectors is greater than `maxRotation`
+          and their cross product can't be normalized (they are close to collinear).
+          -/
+          @[inline]
+          def rotateTowards (v target : $vTy) (maxRotation : $sTy) : $vTy :=
             debug_assert! maxRotation >= 0
             let angle := v.angleBetween target
             let angleAbs := angle.abs
             dbg_trace angleAbs
             if angleAbs <= maxRotation
               then resizeAs v target
-              else v.rotate <| if angle < 0 then -maxRotation else maxRotation
+              else v.rotate ((v.cross target).normalize) (if angle < 0 then -maxRotation else maxRotation)
+
+          /--
+          Returns some unnormalized vector orthogonal to the argument.
+
+          Assumes that the input vector is finite and non-zero.
+          -/
+          @[inline]
+          def anyOrthogonal (v : $vTy) : $vTy :=
+            if v.x.abs > v.y.abs
+              then ⟨-v.z, 0, v.x⟩
+              else ⟨0, v.z, -v.y⟩
+
+          /--
+          Performs a spherical linear interpolation between `start` and `end` based on `t`.
+
+          When `t` is `0`, the result will be `start`.
+          When `t` is `1`, the result will be `end`.
+          When `t` is outside of the range, the result is linearly extrapolated.
+
+          Returns `NaN` if `value`, `start` or `end` is NaN (for each axis).
+          -/
+          def slerp (start «end» : $vTy) (t : $sTy) : $vTy :=
+            -- From `https://github.com/bitshifter/glam-rs` with edits
+            let startLen := start.length
+            let endLen := end.length
+            let cos := start.dot «end» / (startLen * endLen)
+            if cos.abs < 1 - 3e-7 then
+              let angle := cos.acos
+              let sin := angle.sin
+              let t1 := (angle * (1 - t)).sin
+              let t2 := (angle * t).sin
+              let len := $sLerp startLen endLen t
+              (t1 * (len / startLen) * start + t2 * (len / endLen) * «end») / sin
+            else if cos < 0.0 then
+              ($sLerp startLen endLen t / startLen) * start.rotate start.anyOrthogonal.normalize (t * $(cx.scalarExtMember "pi"))
+            else
+              start.lerp «end» t
         )
       elabCommand <| ← `(
         end $vTy

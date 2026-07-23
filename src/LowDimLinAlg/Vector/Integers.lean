@@ -75,7 +75,7 @@ run_cmd
 
         /-- Componentwise clamping of components. -/
         @[inline]
-        def clamp (min max v : $vTy) : $vTy :=
+        def clamp (v min max : $vTy) : $vTy :=
           ⟨$(dims.map fun dim => app ``Max.max #[vget `min dim, app ``Min.min #[vget `v dim, vget `max dim]]),*⟩
 
         /-- Componentwise modulo. -/
