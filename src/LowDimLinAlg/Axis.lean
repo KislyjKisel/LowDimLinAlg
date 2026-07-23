@@ -63,3 +63,45 @@ def Axis4.toAxis3 : Axis4 → Option Axis3
 
 instance : Coe Axis2 Axis3 := ⟨Axis2.toAxis3⟩
 instance : Coe Axis3 Axis4 := ⟨Axis3.toAxis4⟩
+
+/-- Array containing all 2D axes. -/
+def Axis2.axes : Array Axis2 := #[.x, .y]
+
+/-- Array containing all 3D axes. -/
+def Axis3.axes : Array Axis3 := #[.x, .y, .z]
+
+/-- Array containing all 4D axes. -/
+def Axis4.axes : Array Axis4 := #[.x, .y, .z, .w]
+
+/--
+Returns the next axis or the first if the argument is the last.
+
+`x → y → x`
+-/
+@[inline]
+def Axis2.cycle : Axis2 → Axis2
+| .x => .y
+| .y => .x
+
+/--
+Returns the next axis or the first if the argument is the last.
+
+`x → y → z → x`
+-/
+@[inline]
+def Axis3.cycle : Axis3 → Axis3
+| .x => .y
+| .y => .z
+| .z => .x
+
+/--
+Returns the next axis or the first if the argument is the last.
+
+`x → y → z → w → x`
+-/
+@[inline]
+def Axis4.cycle : Axis4 → Axis4
+| .x => .y
+| .y => .z
+| .z => .w
+| .w => .x
