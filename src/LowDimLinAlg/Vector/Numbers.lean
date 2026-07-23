@@ -149,7 +149,6 @@ run_cmd
 
             The direction is given by the right-hand rule for a right-handed coordinate system (e.g. X - right, Y - up, Z - towards viewer)
             and left-hand rule for a left-handed one (e.g. X - right, Y - up, Z - from viewer).
-            `forward × left = up` for a right-handed coordinate system, `-up` for left-handed.
 
             `unitX × unitY = unitZ` where `x`, `y`, `z` - unit axis vectors.
             -/
