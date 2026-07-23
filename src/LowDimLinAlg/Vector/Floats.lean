@@ -259,7 +259,7 @@ run_cmd
           (a - b).all <| (· <= maxDifference) ∘ $(cx.scalarMember "abs")
 
         /--
-        Changes the vector's length to be between `min` and `max`.
+        Changes the vector length to be between `min` and `max`.
 
         Panics in debug if either `min` or `max` is negative, or if `min > max`.
         -/
@@ -275,7 +275,7 @@ run_cmd
             v
 
         /--
-        Changes the vector's length to be not less than `min`.
+        Changes the vector length to be not less than `min`.
 
         Panics in debug if `min` is negative.
         -/
@@ -288,7 +288,7 @@ run_cmd
             else v
 
         /--
-        Changes the vector's length to be not greater than `max`.
+        Changes the vector length to be not greater than `max`.
 
         Panics in debug if `max` is negative.
         -/

@@ -48,7 +48,7 @@ run_cmd
         def splat (value : $sTy) : $vTy :=
           $(app `mk <| .replicate dims.size <| mkIdent `value)
 
-        /-- Gets vector's component value. -/
+        /-- Gets the vector component value indexed by an axis. -/
         @[inline]
         def get (v : $vTy) : $axisTy → $sTy
           $(← dims.mapM fun dim => `(Lean.Parser.Term.matchAltExpr|
@@ -66,7 +66,7 @@ run_cmd
             | $dim.indexLit, _ => $(vget `v dim)
           )):matchAlt*
 
-        /-- Sets vector's component value. -/
+        /-- Sets the vector component value indexed by an axis. -/
         @[inline]
         def set (v : $vTy) : $axisTy → $sTy → $vTy
           $(← dims.mapM fun dim => `(Lean.Parser.Term.matchAltExpr|
@@ -78,14 +78,14 @@ run_cmd
         def map (f : $sTy → $sTy) (v : $vTy) : $vTy :=
           $(app `mk <| dims.map fun dim => app `f #[vget `v dim])
 
-        /-- Creates a vector from an array. Panics if the list's length is less than 2. -/
+        /-- Creates a vector from an array. Panics if the list length is less than 2. -/
         @[inline]
         def ofList (a : List $sTy) : $vTy :=
           if h: a.length >= $dimsSizeLit
             then $(app `mk <| (0...dims.size).iter.map (fun i => app ``getElem #[mkIdent `a, Syntax.mkNatLit i, byGetElemTactic]) |>.toArray)
             else panic! $(Syntax.mkStrLit s!"list contains less than {dims.size} values")
 
-        /-- Creates a vector from an array. Panics if the array's size is less than 2. -/
+        /-- Creates a vector from an array. Panics if the array size is less than 2. -/
         @[inline]
         def ofArray (a : Array $sTy) : $vTy :=
           if h: a.size >= $dimsSizeLit
