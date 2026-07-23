@@ -78,14 +78,14 @@ run_cmd
         def map (f : $sTy → $sTy) (v : $vTy) : $vTy :=
           $(app `mk <| dims.map fun dim => app `f #[vget `v dim])
 
-        /-- Creates a vector from an array. Panics if the list length is less than 2. -/
+        /-- Creates a vector from a list. Panics if the list does not contain enough elements. -/
         @[inline]
         def ofList (a : List $sTy) : $vTy :=
           if h: a.length >= $dimsSizeLit
             then $(app `mk <| (0...dims.size).iter.map (fun i => app ``getElem #[mkIdent `a, Syntax.mkNatLit i, byGetElemTactic]) |>.toArray)
             else panic! $(Syntax.mkStrLit s!"list contains less than {dims.size} values")
 
-        /-- Creates a vector from an array. Panics if the array size is less than 2. -/
+        /-- Creates a vector from an array. Panics if the array does not contain enough elements. -/
         @[inline]
         def ofArray (a : Array $sTy) : $vTy :=
           if h: a.size >= $dimsSizeLit
@@ -143,7 +143,7 @@ run_cmd
             let qIsMinimal (dim : Dimension) : TSyntax `term :=
               foldBinopL (dims.filter (·.index != dim.index)) ``Bool.and fun dim2 =>
                 app ``LE.le #[vget `v dim, vget `v dim2]
-            flip (dims.take <| dims.size - 1).foldr (dot axisTy.getId dims[dims.size - 1]!.str) fun dim r =>
+            flip (dims.take <| dims.size - 1).foldr (dot axisTy.getId dims.back!.str) fun dim r =>
               app ``cond #[qIsMinimal dim, dot axisTy.getId dim.str, r]
           )
 
@@ -163,7 +163,7 @@ run_cmd
             let qIsMaximal (dim : Dimension) : TSyntax `term :=
               foldBinopL (dims.filter (·.index != dim.index)) ``Bool.and fun dim2 =>
                 app ``LE.le #[vget `v dim2, vget `v dim]
-            flip (dims.take <| dims.size - 1).foldr (dot axisTy.getId dims[dims.size - 1]!.str) fun dim r =>
+            flip (dims.take <| dims.size - 1).foldr (dot axisTy.getId dims.back!.str) fun dim r =>
               app ``cond #[qIsMaximal dim, dot axisTy.getId dim.str, r]
           )
 

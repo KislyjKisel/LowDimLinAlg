@@ -34,7 +34,7 @@ run_cmd
 
       /-- Pushes vector components to a scalar array. -/
       @[inline]
-      def $toF64Arr (v : $f64vTy) (dst : FloatArray := by exact FloatArray.emptyWithCapacity 2) : FloatArray :=
+      def $toF64Arr (v : $f64vTy) (dst : FloatArray := by exact FloatArray.emptyWithCapacity $dimsSizeLit) : FloatArray :=
         $(flip dims.foldl (mkIdent `dst) fun r dim => app ``FloatArray.push #[r, vget `v dim])
     )
     scalars.forM fun cx => do
@@ -62,18 +62,18 @@ run_cmd
         def sign (v : $vTy) : $vTy :=
           ⟨$(dims.map fun dim => app (cx.scalarExtMember "sign").getId #[vget `v dim]),*⟩
 
-        /-- Vector length. -/
+        /-- The length of the vector. -/
         @[inline]
         def length (v : $vTy) : $sTy :=
           $(cx.scalarMember "sqrt") <| lengthSqr v
 
-        /-- Distance between two points represented by vectors from any third point. -/
+        /-- Distance between two points. -/
         @[inline]
         def distance (a b : $vTy) : $sTy :=
           length (a - b)
 
         /--
-        Normalizes vector to the length of `1`.
+        Normalizes the vector to the length of `1`.
 
         Returns `none` if the resulting vector is not finite.
         -/
@@ -85,17 +85,17 @@ run_cmd
             else some v'
 
         /--
-        Normalizes vector to the length of `1`.
+        Normalizes the vector to the length of `1`.
 
         Panics in debug if any component of `v/|v|` is not finite.
         -/
         @[inline]
         def normalize (v : $vTy) : $vTy :=
           let v' := v * (1 / v.length)
-          debug_assert! v'.any <| not ∘ $sIsFinite
+          debug_assert! v'.all $sIsFinite
           v'
 
-        /-- Checks whether the length of `v` is 1. -/
+        /-- Whether the length of the vector is 1. -/
         @[inline]
         def isNormalized (maxSqrDelta : $sTy := 2e-4) (v : $vTy) : Bool :=
           $(cx.scalarMember "abs") (v.lengthSqr - 1) <= maxSqrDelta
@@ -251,7 +251,7 @@ run_cmd
             else .zero
 
         /--
-        Checks whether absolute difference between corresponding
+        Whether absolute difference between corresponding
         component values is less than or equal to `maxDifference`.
         -/
         @[inline]
@@ -260,6 +260,8 @@ run_cmd
 
         /--
         Changes the vector length to be between `min` and `max`.
+
+        Returns NaNs if the initial length of `v` is 0 and `min` is not.
 
         Panics in debug if either `min` or `max` is negative, or if `min > max`.
         -/
@@ -277,6 +279,8 @@ run_cmd
         /--
         Changes the vector length to be not less than `min`.
 
+        Returns NaNs if the initial length of `v` is 0 and `min` is not.
+
         Panics in debug if `min` is negative.
         -/
         @[inline]
@@ -289,6 +293,8 @@ run_cmd
 
         /--
         Changes the vector length to be not greater than `max`.
+
+        Returns NaNs if the initial length of `v` is 0 and `max` is not.
 
         Panics in debug if `max` is negative.
         -/
@@ -315,7 +321,7 @@ run_cmd
           /--
           Creates a unit vector from `angle`.
 
-          Angle is counterclockwise if Y is up and X is down.
+          Angle is counterclockwise if Y is up and X is right.
           -/
           @[inline]
           def fromAngle (angle : $sTy) : $vTy :=
@@ -324,16 +330,16 @@ run_cmd
           /--
           Creates a vector from `length` and `angle`.
 
-          Angle is counterclockwise if Y is up and X is down.
+          Angle is counterclockwise if Y is up and X is right.
           -/
           @[inline]
           def fromLengthAngle (length angle : $sTy) : $vTy :=
             length * fromAngle angle
 
           /--
-          Returns angle between positive X axis and the ray defined by vector `v` and origin `(0, 0)`.
+          The angle between positive X axis and the vector.
 
-          Panics in debug if the length of `v` is zero.
+          Panics in debug if the length of the vector is zero.
           -/
           @[inline]
           def angle (v : $vTy) : $sTy :=
@@ -367,7 +373,6 @@ run_cmd
             debug_assert! maxRotation >= 0
             let angle := v.angleBetween target
             let angleAbs := angle.abs
-            dbg_trace angleAbs
             if angleAbs <= maxRotation
               then target.resizeAs v
               else v.rotate <| if angle < 0 then -maxRotation else maxRotation
@@ -390,10 +395,10 @@ run_cmd
             -- From `Raylib` with edits
             debug_assert! axis.isNormalized
             let angle := 0.5 * angle
-            let w := angle.sin * axis
-            let wv := cross w v
-            let wwv := cross w wv
-            v + 2 * angle.cos * wv + (2 : $sTy) * wwv
+            let u := angle.sin * axis
+            let uv := cross u v
+            let uuv := cross u uv
+            v + 2 * angle.cos * uv + (2 : $sTy) * uuv
 
           /--
           Rotates a vector around the X axis.
@@ -440,9 +445,8 @@ run_cmd
             debug_assert! maxRotation >= 0
             let angle := v.angleBetween target
             let angleAbs := angle.abs
-            dbg_trace angleAbs
             if angleAbs <= maxRotation
-              then resizeAs v target
+              then target.resizeAs v
               else v.rotate ((v.cross target).normalize) (if angle < 0 then -maxRotation else maxRotation)
 
           /--
@@ -463,7 +467,7 @@ run_cmd
           When `t` is `1`, the result will be `end`.
           When `t` is outside of the range, the result is linearly extrapolated.
 
-          Returns `NaN` if `value`, `start` or `end` is NaN (for each axis).
+          Returns `NaN` if `t`, `start` or `end` is NaN (for each axis).
           -/
           def slerp (start «end» : $vTy) (t : $sTy) : $vTy :=
             -- From `https://github.com/bitshifter/glam-rs` with edits

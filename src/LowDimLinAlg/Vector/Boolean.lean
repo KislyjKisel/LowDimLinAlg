@@ -3,6 +3,7 @@ module
 public import LowDimLinAlg.Vector.Types
 
 import LowDimLinAlg.Internal.Dimensionalities
+import LowDimLinAlg.Internal.Syntax
 
 @[expose] public section
 
@@ -33,8 +34,25 @@ run_cmd
         def $accessor (v : $bvTy) : Bool :=
           v.bits &&& $mask != 0
       )
+    let mkAxes := dims.map fun dim =>
+      Prod.mk dim <| Lean.mkIdent <| .mkSimple <| dim.str ++ "Bit"
+    let mkTactic : Lean.TSyntax `tactic ←
+      dims.foldrM
+        (fun dim r => `(tactic| cases $dim.ident:ident <;> $r))
+        (← `(tactic| decide))
     Lean.Elab.Command.elabCommand <| ← `(
-      instance : Repr BVector2 where
+      /-- Creates a vector from components. -/
+      @[inline]
+      def mk ($(dims.map fun dim => dim.ident)* : Bool) : $bvTy :=
+        $(← mkAxes.foldrM
+            (fun (dim, v) r => lets v (app ``cond #[dim.ident, lit1, lit0]) r)
+            (app `ofBits #[
+              foldBinopL mkAxes ``OrOp.or (fun (dim, v) => if dim.index == 0 then v else app ``ShiftLeft.shiftLeft #[v, Lean.Syntax.mkNatLit dim.index]),
+              ← `(by $mkTactic:tactic),
+            ])
+        )
+
+      instance : Repr $bvTy where
         reprPrec v _ :=
           let fields : List Std.Format := [
             Std.Format.joinSep [
@@ -42,7 +60,7 @@ run_cmd
               ":=",
               "0b".append <| String.ofList <| (Nat.toDigits 2 v.bits.toNat).leftpad $dimsSizeLit '0'
             ] " ",
-            Std.Format.joinSep ["length2", ":=", "by", "decide"] " ",
+            Std.Format.joinSep ["and_mask_eq_self", ":=", "by", "decide"] " ",
           ]
           Std.Format.bracket "{" (Std.Format.joinSep fields <| "," ++ Std.Format.line) "}"
 
@@ -51,12 +69,12 @@ run_cmd
       where bits that don't represent any component values are zeroed.
       -/
       @[inline]
-      def ofBits' (bits : UInt8) : $bvTy :=
+      def ofBitsMasked (bits : UInt8) : $bvTy :=
         .ofBits (bits &&& $bvMask) (by rw [UInt8.and_assoc, UInt8.and_self])
 
       /-- Componentwise boolean `and`. -/
       @[inline]
-      def and (a b : BVector2) : BVector2 :=
+      def and (a b : $bvTy) : $bvTy :=
         .ofBits (a.bits &&& b.bits) <| by
           rw [UInt8.and_assoc, b.and_mask_eq_self]
 
@@ -68,8 +86,7 @@ run_cmd
       @[inline]
       def or (a b : $bvTy) : $bvTy :=
         .ofBits (a.bits ||| b.bits) <| by
-          apply UInt8.eq_of_toFin_eq
-          apply Fin.eq_of_val_eq
+          apply UInt8.toNat_inj.mp
           show (a.bits.toNat ||| b.bits.toNat) &&& $bvMask = a.bits.toNat ||| b.bits.toNat
           rw [Nat.and_or_distrib_right, toNat_and_mask_eq_self a, toNat_and_mask_eq_self b]
 
@@ -77,54 +94,26 @@ run_cmd
       @[inline]
       def xor (a b : $bvTy) : $bvTy :=
         .ofBits (a.bits ^^^ b.bits) <| by
-          apply UInt8.eq_of_toFin_eq
-          apply Fin.eq_of_val_eq
+          apply UInt8.toNat_inj.mp
           show (a.bits.toNat ^^^ b.bits.toNat) &&& $bvMask = a.bits.toNat ^^^ b.bits.toNat
           rw [Nat.and_xor_distrib_right, toNat_and_mask_eq_self a, toNat_and_mask_eq_self b]
 
       /-- Componentwise boolean `not`. -/
       @[inline]
       def not (v : $bvTy) : $bvTy :=
-        .ofBits' v.bits.complement
+        .ofBitsMasked v.bits.complement
 
       @[inline]
-      instance : AndOp BVector2 := ⟨BVector2.and⟩
+      instance : AndOp $bvTy := ⟨and⟩
 
       @[inline]
-      instance : OrOp BVector2 := ⟨BVector2.or⟩
+      instance : OrOp $bvTy := ⟨or⟩
 
       @[inline]
-      instance : XorOp BVector2 := ⟨BVector2.xor⟩
+      instance : XorOp $bvTy := ⟨xor⟩
 
       @[inline]
-      instance : Complement BVector2 := ⟨BVector2.not⟩
+      instance : Complement $bvTy := ⟨not⟩
 
       end $bvTy
     )
-
-/-- Creates vector from components. -/
-@[inline]
-def BVector2.mk (x y : Bool) : BVector2 :=
-  let xBit : UInt8 := cond x 1 0
-  let yBit : UInt8 := cond y 1 0
-  .ofBits (xBit ||| yBit <<< 1) <| by
-    cases x <;> cases y <;> decide
-
-/-- Creates vector from components. -/
-@[inline]
-def BVector3.mk (x y z : Bool) : BVector3 :=
-  let xBit : UInt8 := cond x 1 0
-  let yBit : UInt8 := cond y 1 0
-  let zBit : UInt8 := cond z 1 0
-  .ofBits (xBit ||| yBit <<< 1 ||| zBit <<< 2) <| by
-    cases x <;> cases y <;> cases z <;> decide
-
-/-- Creates vector from components. -/
-@[inline]
-def BVector4.mk (x y z w : Bool) : BVector4 :=
-  let xBit : UInt8 := cond x 1 0
-  let yBit : UInt8 := cond y 1 0
-  let zBit : UInt8 := cond z 1 0
-  let wBit : UInt8 := cond w 1 0
-  .ofBits (xBit ||| yBit <<< 1 ||| zBit <<< 2 ||| wBit <<< 3) <| by
-    cases x <;> cases y <;> cases z <;> cases w <;> decide

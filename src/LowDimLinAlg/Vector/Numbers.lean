@@ -69,7 +69,10 @@ run_cmd
 
         @[inline] instance : HMul $vTy $sTy $vTy := ⟨fun v s ↦ v.scale s⟩
         @[inline] instance : HMul $sTy $vTy $vTy := ⟨scale⟩
-        @[inline] instance : HDiv $vTy $sTy $vTy := ⟨fun v s ↦ v.scale (1 / s)⟩
+
+        @[inline]
+        instance : HDiv $vTy $sTy $vTy :=
+          ⟨fun v s ↦ ⟨$(dims.map fun dim => app ``Div.div #[vget `v dim, mkIdent `s]),*⟩⟩
 
         @[inline]
         instance : HDiv $sTy $vTy $vTy :=
@@ -144,8 +147,8 @@ run_cmd
             The cross product is defined as a vector that is orthogonal to both `a` and `b`
             and a magnitude equal to the area of the parallelogram with the vectors for sides.
 
-            The direction is given by the right-hand rule for a right-handed coordinate system (e.g. X - right, Y - up, Z - back)
-            and left-hand rule for a left-handed one (e.g. X - right, Y - up, Z - forward).
+            The direction is given by the right-hand rule for a right-handed coordinate system (e.g. X - right, Y - up, Z - towards viewer)
+            and left-hand rule for a left-handed one (e.g. X - right, Y - up, Z - from viewer).
             `forward × left = up` for a right-handed coordinate system, `-up` for left-handed.
 
             `unitX × unitY = unitZ` where `x`, `y`, `z` - unit axis vectors.
@@ -160,7 +163,7 @@ run_cmd
           def abs (v : $vTy) : $vTy :=
             ⟨$(dims.map fun dim => app (cx.scalarTypeName.str "abs") #[vget `v dim]),*⟩
 
-          /-- Squared distance between two points represented by vectors from any third point. -/
+          /-- Squared distance between two points. -/
           @[inline]
           def distanceSqr (a b : $vTy) : $sTy :=
             lengthSqr <| a - b

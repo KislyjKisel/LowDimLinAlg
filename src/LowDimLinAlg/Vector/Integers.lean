@@ -27,11 +27,11 @@ run_cmd
           /-- Componentwise sign (does not return zeros). -/
           @[inline]
           def sign (v : $vTy) : $vTy :=
-            ⟨$(dims.map fun dim => app ``cond #[app ``LT.lt #[vget `v dim, lit0], app ``Neg.neg #[lit1], lit1]),*⟩
+            ⟨$(dims.map fun dim => app ``ite #[app ``LT.lt #[vget `v dim, lit0], app ``Neg.neg #[lit1], lit1]),*⟩
         )
       if cx.isUnsignedInteger then
         elabCommand <| ← `(
-          /-- Squared distance between two points represented by vectors from any third point. -/
+          /-- Squared distance between two points. -/
           @[inline]
           def distanceSqr (a b : $vTy) : $sTy :=
             $(← dims.foldlM
