@@ -48,7 +48,7 @@ run_cmd
         def splat (value : $sTy) : $vTy :=
           $(app `mk <| .replicate dims.size <| mkIdent `value)
 
-        /-- Gets the vector component value indexed by an axis. -/
+        /-- Returns the vector component value indexed by an axis. -/
         @[inline]
         def get (v : $vTy) : $axisTy → $sTy
           $(← dims.mapM fun dim => `(Lean.Parser.Term.matchAltExpr|
