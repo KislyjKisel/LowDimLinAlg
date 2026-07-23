@@ -46,11 +46,11 @@ run_cmd
 
           /-- All components set to positive infinity. -/
           @[inline]
-          def inf : $vTy := ⟨$(Array.replicate dims.size (cx.scalarExtMember "inf")),*⟩
+          def infinity : $vTy := ⟨$(Array.replicate dims.size (cx.scalarExtMember "infinity")),*⟩
 
           /-- All components set to negative infinity. -/
           @[inline]
-          def negInf : $vTy := ⟨$(Array.replicate dims.size (cx.scalarExtMember "negInf")),*⟩
+          def negInfinity : $vTy := ⟨$(Array.replicate dims.size (cx.scalarExtMember "negInfinity")),*⟩
         )
       if cx.isBoolean then
         elabCommand <| ← `(

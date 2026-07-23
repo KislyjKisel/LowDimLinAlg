@@ -118,11 +118,21 @@ run_cmd
 
 /-- Positive infinity -/
 @[inline]
-def F32.inf : Float32 := .ofBits 0x7F800000
+def F32.infinity : Float32 := .ofBits 0x7F800000
+
+/--
+Machine epsilon.
+
+This is the difference between 1 and the next larger representable number.
+
+Equal to `2^(1 − mantissaDigits)` where `mantissaDigits = 24`.
+-/
+@[inline]
+def F32.epsilon : Float32 := .ofBits 0x34000000
 
 /-- Negative infinity -/
 @[inline]
-def F32.negInf : Float32 := .ofBits 0xFF800000
+def F32.negInfinity : Float32 := .ofBits 0xFF800000
 
 /-- Archimedes' constant (π) -/
 @[inline]
@@ -130,12 +140,22 @@ def F32.pi : Float32 := .ofBits 0x40490FDB
 
 /-- Positive infinity -/
 @[inline]
-def F64.inf : Float := .ofBits 0x7FF0000000000000
+def F64.infinity : Float := .ofBits 0x7FF0000000000000
 
 /-- Negative infinity -/
 @[inline]
-def F64.negInf : Float := .ofBits 0xFFF0000000000000
+def F64.negInfinity : Float := .ofBits 0xFFF0000000000000
 
 /-- Archimedes' constant (π) -/
 @[inline]
 def F64.pi : Float := .ofBits 0x400921FB54442D18
+
+/--
+Machine epsilon.
+
+This is the difference between 1 and the next larger representable number.
+
+Equal to `2^(1 − mantissaDigits)` where `mantissaDigits = 53`.
+-/
+@[inline]
+def F64.epsilon : Float := .ofBits 0x3cb0000000000000
