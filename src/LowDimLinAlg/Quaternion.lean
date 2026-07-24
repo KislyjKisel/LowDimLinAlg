@@ -1,6 +1,8 @@
 module
 
 public import LowDimLinAlg.Vector.Floats
+public import LowDimLinAlg.Vector.Swizzling
+public import LowDimLinAlg.Matrix
 
 import LowDimLinAlg.Internal.Scalars
 
@@ -18,6 +20,10 @@ run_cmd
     let qTy := cx.structure "Quaternion"
     let v3Ty := cx.structure "Vector3"
     let v4Ty := cx.structure "Vector4"
+    let m3Ty := cx.structure "Matrix3"
+    let m4Ty := cx.structure "Matrix4"
+    let sEpsilon := cx.scalarExtMember "epsilon"
+    let sPi := cx.scalarExtMember "pi"
     Lean.Elab.Command.elabCommand <| ← `(
       structure $qTy:ident where
         x : $sTy
@@ -102,7 +108,7 @@ run_cmd
         let ⟨m00, m01, m02⟩ := xAxis
         let ⟨m10, m11, m12⟩ := yAxis
         let ⟨m20, m21, m22⟩ := zAxis
-        if m22 <= 2 then
+        if m22 <= 0 then
           let dif10 := m11 - m00
           let omm22 := 1 - m22
           if dif10 <= 0 then
@@ -125,6 +131,64 @@ run_cmd
             let inv4w := 0.5 / fourWsq.sqrt
             ⟨(m12 - m21) * inv4w, (m20 - m02) * inv4w, (m01 - m10) * inv4w, fourWsq * inv4w⟩
 
+      /--
+      Creates a quaternion representing the minimal rotation for transforming `from` to `to`.
+      Chooses the shorter path.
+
+      Panics in debug if either `from` or `to` is not normalized.
+      -/
+      @[inline]
+      def ofFromTo («from» to : $v3Ty) : $qTy :=
+        debug_assert! «from».isNormalized && to.isNormalized
+        let dot := «from».dot to
+        if dot > 1 - 2 * $sEpsilon then
+          .identity
+        else if dot < -1 + 2 * $sEpsilon then
+          .ofAxisAngle «from».anyOrthogonal $sPi
+        else
+          let cross := «from».cross to
+          ofVector4 <| .normalize { cross with w := 1 + dot }
+
+      /--
+      Creates a quaternion representing the minimal rotation for transforming `from` to either `to` or `-to`.
+      Chooses the shorter path.
+
+      Panics in debug if either `from` or `to` is not normalized.
+      -/
+      @[inline]
+      def ofFromToCollinear («from» to : $v3Ty) : $qTy :=
+        if «from».dot to >= 0
+          then ofFromTo «from» to
+          else ofFromTo «from» (-to)
+
+      /--
+      Creates a quaternion from a 3x3 rotation matrix.
+
+      Expects a matrix intended to be used with row vectors.
+
+      Note if the input matrix contain scales, shears, or other non-rotation transformations then
+      the output of this function is ill-defined.
+
+      Panics in debug if any matrix row is not normalized.
+      -/
+      @[inline]
+      def ofMatrix3 (m : $m3Ty) : $qTy :=
+        ofAxes m.xAxis m.yAxis m.zAxis
+
+      /--
+      Creates a quaternion from a 3x3 rotation matrix inside a homogeneous 4x4 matrix.
+
+      Expects a matrix intended to be used with row vectors.
+
+      Note if the upper 3x3 matrix contain scales, shears, or other non-rotation transformations then
+      the output of this function is ill-defined.
+
+      Panics in debug if any row of the upper 3x3 rotation matrix is not normalized.
+      -/
+      @[inline]
+      def ofMatrix4 (m : $m4Ty) : $qTy :=
+        ofAxes m.xAxis.xyz m.yAxis.xyz m.zAxis.xyz
+
       /-- The quaternion components as a vector `⟨x, y, z, w⟩`. -/
       @[inline]
       def toVector4 (q : $qTy) : $v4Ty :=
@@ -144,6 +208,50 @@ run_cmd
       def toScaledAxis (q : $qTy) : $v3Ty :=
         let (axis, angle) := toAxisAngle q
         axis * angle
+
+      /-- The result of rotating X axis by the quaternion. -/
+      @[inline]
+      def xAxis (q : $qTy) : $v3Ty := ⟨
+        1 - 2 * q.y * q.y - 2 * q.z * q.z,
+        2 * q.x * q.y + 2 * q.w * q.z,
+        2 * q.x * q.z - 2 * q.w * q.y,
+      ⟩
+
+      /-- The result of rotating Y axis by the quaternion. -/
+      @[inline]
+      def yAxis (q : $qTy) : $v3Ty := ⟨
+        2 * q.x * q.y - 2 * q.w * q.z,
+        1 - 2 * q.x * q.x - 2 * q.z * q.z,
+        2 * q.y * q.z + 2 * q.w * q.x,
+      ⟩
+
+      /-- The result of rotating Z axis by the quaternion. -/
+      @[inline]
+      def zAxis (q : $qTy) : $v3Ty := ⟨
+        2 * q.x * q.z + 2 * q.w * q.y,
+        2 * q.y * q.z - 2 * q.w * q.x,
+        1 - 2 * q.x * q.x - 2 * q.y * q.y,
+      ⟩
+
+      /--
+      Converts the quaternion to a 3x3 rotation matrix.
+
+      The resulting matrix must be used with row vectors,
+      e.g. when multiplying a vector by the matrix the vector must be on the left.
+      -/
+      @[inline]
+      def toMatrix3 (q : $qTy) : $m3Ty :=
+        .ofAxes q.xAxis q.yAxis q.zAxis
+
+      /--
+      Converts the quaternion to a 4x4 homogeneous matrix.
+
+      The resulting matrix must be used with row vectors,
+      e.g. when multiplying a vector by the matrix the vector must be on the left.
+      -/
+      @[inline]
+      def toMatrix4 (q : $qTy) : $m4Ty :=
+        .ofAxes { q.xAxis with w := 0 } { q.yAxis with w := 0 } { q.zAxis with w := 0 } ⟨0, 0, 0, 1⟩
 
       /--
       Dot product of two quaternions.
@@ -193,14 +301,13 @@ run_cmd
         ⟨-q.x, -q.y, -q.z, q.w⟩
 
       /--
-      The inverse of a normalized quaternion.
+      The inverse of a quaternion.
 
-      Panics in debug if the quaternion is not normalized.
+      If the quaternion is expected to be normalized use `conjugate`.
       -/
       @[inline]
       def inverse (q : $qTy) : $qTy :=
-        debug_assert! q.isNormalized
-        q.conjugate
+        ofVector4 <| q.conjugate.toVector4 / q.lengthSqr
 
       /--
       Negates a quaternion.
@@ -230,21 +337,24 @@ run_cmd
         q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z,
       ⟩
 
+      @[inline] instance : Inv $qTy := ⟨inverse⟩
+      @[inline] instance : Neg $qTy := ⟨neg⟩
+      @[inline] instance : SMul $sTy $qTy := ⟨smul⟩
+      @[inline] instance : Mul $qTy := ⟨mul⟩
+
       /--
-      Multiplies a quaternion and a 3D vector, returning the rotated vector.
+      Applies the rotation represented by the quaternion to a vector.
+
+      Some equivalent to, but faster:
+      `(·.xyz) <| toVector4 <| (q * · * q.conjugate) <| ofVector4 <| v.withW 0`
 
       Panics in debug if the quaternion is not normalized.
       -/
       @[inline]
-      def mulVector3 (q : $qTy) (v : $v3Ty) : $v3Ty :=
+      def apply (q : $qTy) (v : $v3Ty) : $v3Ty :=
         debug_assert! q.isNormalized
         let u := q.vector
         v * (q.w * q.w - u.dot u) + 2 * u.dot v * u + 2 * q.w * u.cross v
-
-      @[inline] instance : Neg $qTy := ⟨neg⟩
-      @[inline] instance : SMul $sTy $qTy := ⟨smul⟩
-      @[inline] instance : Mul $qTy := ⟨mul⟩
-      @[inline] instance : HMul $qTy $v3Ty $v3Ty := ⟨mulVector3⟩
 
       /--
       The angle for the minimal rotation between two quaternions in the range `[0, π]`.
@@ -302,7 +412,7 @@ run_cmd
           if dot < 0
             then (-«end», -dot)
             else («end», dot)
-        if dot > 1 - $(cx.scalarExtMember "epsilon")
+        if dot > 1 - $sEpsilon
           then lerpImpl start «end» t
           else slerpImpl start «end» dot t
 
@@ -320,7 +430,7 @@ run_cmd
       def slerp (start «end» : $qTy) (t : $sTy) : $qTy :=
         debug_assert! start.isNormalized && «end».isNormalized && t >= 0 && t <= 1
         let dot := start.dot «end»
-        if dot > 1 - $(cx.scalarExtMember "epsilon")
+        if dot > 1 - $sEpsilon
           then lerpImpl start «end» t
           else slerpImpl start «end» dot t
 
@@ -340,12 +450,12 @@ run_cmd
       end $qTy
     )
 
-/-- Converts quaternion components to `Float`. -/
+/-- Converts the quaternion components to `Float`. -/
 @[inline]
 def F32Quaternion.toF64 (q : F32Quaternion) : F64Quaternion :=
   ⟨q.x.toFloat, q.y.toFloat, q.z.toFloat, q.w.toFloat⟩
 
-/-- Converts quaternion components to `Float32`. -/
+/-- Converts the quaternion components to `Float32`. -/
 @[inline]
 def F64Quaternion.toF32 (q : F64Quaternion) : F32Quaternion :=
   ⟨q.x.toFloat32, q.y.toFloat32, q.z.toFloat32, q.w.toFloat32⟩
