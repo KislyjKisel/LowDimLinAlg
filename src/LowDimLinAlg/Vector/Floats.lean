@@ -18,7 +18,7 @@ open Internal
 
 run_cmd
   let byGetElemTactic ← `(by get_elem_tactic)
-  for dims in dimensionalities 2 4 do
+  for dims in dimensionalities do
     let structureSuffix := "Vector" ++ toString dims.size
     let dimsSizeLit := Syntax.mkNatLit dims.size
     let f64vTy := mkIdent <| .mkSimple <| "F64" ++ structureSuffix

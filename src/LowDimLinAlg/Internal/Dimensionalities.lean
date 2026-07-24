@@ -12,10 +12,11 @@ structure Dimension where
   char : Char
 deriving Inhabited
 
-def dimensions : Array Dimension := #[⟨0, 'x'⟩, ⟨1, 'y'⟩, ⟨2, 'z'⟩, ⟨3, 'w'⟩]
-
-def dimensionalities := fun (i j : Nat) =>
-  (i...=j) |>.iter.map dimensions.take
+def dimensionalities : Array (Array Dimension) := #[
+  #[⟨0, 'x'⟩, ⟨1, 'y'⟩],
+  #[⟨0, 'x'⟩, ⟨1, 'y'⟩, ⟨2, 'z'⟩],
+  #[⟨0, 'x'⟩, ⟨1, 'y'⟩, ⟨2, 'z'⟩, ⟨3, 'w'⟩],
+]
 
 def Dimension.str (dim : Dimension) : String :=
   dim.char.toString

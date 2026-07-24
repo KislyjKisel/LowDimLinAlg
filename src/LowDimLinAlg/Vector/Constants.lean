@@ -17,7 +17,7 @@ open Lean Elab Command
 open Internal
 
 run_cmd
-  for dims in dimensionalities 2 4 do
+  for dims in dimensionalities do
     scalars.forM fun cx => do
       let vTy := mkIdent <| Name.mkSimple <| cx.scalarPrefix ++ "Vector" ++ toString dims.size
       elabCommand <| ← `(namespace $vTy)

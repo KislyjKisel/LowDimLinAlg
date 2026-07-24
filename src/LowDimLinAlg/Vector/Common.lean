@@ -18,7 +18,7 @@ open Internal
 
 run_cmd
   let byGetElemTactic ← `(by get_elem_tactic)
-  for dims in dimensionalities 2 4 do
+  for dims in dimensionalities do
     let dimsSizeLit := Lean.Syntax.mkNatLit dims.size
     let axisTy := mkIdent <| Name.mkSimple <| "Axis" ++ toString dims.size
     let bvTy := mkIdent <| Name.mkSimple <| "BVector" ++ toString dims.size

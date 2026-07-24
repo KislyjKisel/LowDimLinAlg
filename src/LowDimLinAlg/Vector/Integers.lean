@@ -16,7 +16,7 @@ open Lean Elab Command
 open Internal
 
 run_cmd
-  for dims in dimensionalities 2 4 do
+  for dims in dimensionalities do
     scalars.forM fun cx => do
       if !cx.isInteger then return
       let sTy := cx.scalarType

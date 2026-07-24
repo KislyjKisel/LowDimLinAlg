@@ -13,7 +13,7 @@ open Lean Elab Command
 open Internal
 
 run_cmd
-  for dims in dimensionalities 2 4 do
+  for dims in dimensionalities do
     let bvName := Lean.Name.mkSimple <| "BVector" ++ toString dims.size
     let bvTy := Lean.mkIdent bvName
     let bvMask := Lean.Syntax.mkNatLit <| (1 <<< dims.size) - 1

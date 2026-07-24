@@ -16,7 +16,7 @@ open Lean Elab Command
 open Internal
 
 run_cmd
-  for dims in dimensionalities 2 4 do
+  for dims in dimensionalities do
     let structureSuffix := "Vector" ++ toString dims.size
     scalars.forM fun cx1 => do
       if !cx1.isNumber then return

@@ -16,7 +16,7 @@ open Lean Elab Command
 open Internal
 
 run_cmd
-  for dims in dimensionalities 2 4 do
+  for dims in dimensionalities do
     let bvTy := mkIdent <| Name.mkSimple <| "BVector" ++ toString dims.size
     scalars.forM fun cx => do
       if !cx.isNumber then return
