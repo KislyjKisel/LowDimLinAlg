@@ -31,17 +31,31 @@ run_cmd
       s!"{dims.size}D Bool vector\n\nStored as a single `UInt8` with each component `i` represented by bit `1 <<< i`."
 
 run_cmd
-  for dims in dimensionalities 2 4 do
-    scalars.forM fun cx => do
-      let sTy := cx.scalarType
-      let vTy := mkIdent <| Name.mkSimple <| cx.scalarPrefix ++ "Vector" ++ toString dims.size
-      if cx.isBoolean then return
-      elabCommand <| ← `(
-        structure $vTy where
-          $(← dims.mapM fun dim => `(Parser.Command.structSimpleBinder|
-            $dim.ident:ident : $sTy
-          )):structSimpleBinder*
-        deriving Repr, Inhabited
-      )
+  scalars.forM fun cx => do
+    if cx.isBoolean then return
+    let sTy := cx.scalarType
+    let v2Ty : Ident := cx.structure "Vector2"
+    let v3Ty : Ident := cx.structure "Vector3"
+    let v4Ty : Ident := cx.structure "Vector4"
+    elabCommand <| ← `(
+      structure $v2Ty where
+        x : $sTy
+        y : $sTy
+      deriving Repr, Inhabited
+
+      structure $v3Ty where
+        x : $sTy
+        y : $sTy
+        z : $sTy
+      deriving Repr, Inhabited
+
+      structure $v4Ty where
+        x : $sTy
+        y : $sTy
+        z : $sTy
+        w : $sTy
+      deriving Repr, Inhabited
+    )
+    for (n, vTy) in (2...=4).iter.zip #[v2Ty, v3Ty, v4Ty].iter do
       addDocStringCore (← resolveGlobalConstNoOverload vTy) <|
-        s!"{dims.size}D {cx.scalarTypeName} vector"
+        s!"{n}D {cx.scalarTypeName} vector"
