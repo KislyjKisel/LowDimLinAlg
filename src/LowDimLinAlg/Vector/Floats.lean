@@ -1,5 +1,6 @@
 module
 
+public import LowDimLinAlg.Internal.Lemmas
 public import LowDimLinAlg.Vector.Constants
 public import LowDimLinAlg.Vector.Numbers
 
@@ -18,6 +19,7 @@ open Internal
 
 run_cmd
   let byGetElemTactic ← `(by get_elem_tactic)
+  let byDecide ← `(by decide)
   for dims in dimensionalities do
     let structureSuffix := "Vector" ++ toString dims.size
     let dimsSizeLit := Syntax.mkNatLit dims.size
@@ -485,6 +487,68 @@ run_cmd
               ($sLerp startLen endLen t / startLen) * start.rotate start.anyOrthogonal.normalize (t * $(cx.scalarExtMember "pi"))
             else
               start.lerp «end» t
+        )
+      if cx.scalarTypeName = ``Float then
+        elabCommand <| ← `(
+          /-- Reads a vector stored as a sequence from a span inside a scalar array. -/
+          @[inline]
+          def ureadFloatArray (a : FloatArray) (offset : USize) (size_le : a.size <= USize.size) (le_size : offset.toNat + $dimsSizeLit <= a.size) : $vTy :=
+            ⟨$(dims.map fun dim =>
+              app ``FloatArray.uget #[
+                mkIdent `a,
+                app ``Add.add #[mkIdent `offset, Syntax.mkNatLit dim.index],
+                app ``Lemmas.spanIndex #[
+                  app ``FloatArray.size #[mkIdent `a],
+                  dimsSizeLit,
+                  Syntax.mkNatLit dim.index,
+                  mkIdent `offset,
+                  mkIdent `size_le,
+                  mkIdent `le_size,
+                  byDecide
+                ],
+              ]
+            ):term,*⟩
+
+          /-- Reads a vector stored as a sequence from a span inside a scalar array. -/
+          @[inline]
+          def readFloatArray (a : FloatArray) (offset : Nat) (size_le : a.size ≤ USize.size) (le_size : offset + $dimsSizeLit <= a.size) : $vTy :=
+            ureadFloatArray a offset.toUSize size_le (Lemmas.spanIndexNat a.size $dimsSizeLit offset size_le le_size)
+
+          /-- Writes a vector to a span inside a scalar array storing the components sequentially. -/
+          @[inline]
+          def uwriteFloatArray
+            (a : FloatArray)
+            (offset : USize)
+            (v : $vTy)
+            (size_le : a.size <= USize.size)
+            (le_size : offset.toNat + $dimsSizeLit <= a.size) :
+              { a' : FloatArray // a'.size = a.size } :=
+                have : a.size = a.size := rfl
+                $(← dims.foldrM
+                  (fun dim r =>
+                    let prevA := if dim.index = 0 then mkIdent `a else dims[dim.index - 1]!.ident
+                    `(
+                      let $dim.ident := FloatArray.uset
+                        $prevA
+                        (offset + $(Syntax.mkNatLit dim.index))
+                        $(vget `v dim)
+                        (this ▸ Lemmas.spanIndex a.size $dimsSizeLit _ offset size_le le_size (by decide))
+                      have : $(dim.ident).size = a.size := Eq.trans (Lemmas.FloatArray_size_uset $prevA ..) this
+                      $r:term
+                    )
+                  )
+                  (← `(⟨$dims.back!.ident, this⟩)))
+
+          /-- Writes a vector to a span inside a scalar array storing the components sequentially. -/
+          @[inline]
+          def writeFloatArray
+            (a : FloatArray)
+            (offset : Nat)
+            (value : $vTy)
+            (size_le : a.size ≤ USize.size)
+            (le_size : offset + $dimsSizeLit <= a.size) :
+              { a' : FloatArray // a'.size = a.size } :=
+                uwriteFloatArray a offset.toUSize value size_le (Lemmas.spanIndexNat a.size $dimsSizeLit offset size_le le_size)
         )
       elabCommand <| ← `(
         end $vTy
