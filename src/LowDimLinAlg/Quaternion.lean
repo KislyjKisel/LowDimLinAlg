@@ -9,7 +9,6 @@ import LowDimLinAlg.Internal.Scalars
 @[expose] public section
 
 set_option hygiene false
-set_option debugAssertions true -- TODO: delete
 
 namespace LowDimLinAlg
 
@@ -126,7 +125,7 @@ run_cmd
             let fourZsq := opm22 - sum10
             let inv4z := 0.5 / fourZsq.sqrt
             ⟨(m02 + m20) * inv4z, (m12 + m21) * inv4z, fourZsq * inv4z, (m01 - m10) * inv4z⟩
-        else
+          else
             let fourWsq := opm22 + sum10
             let inv4w := 0.5 / fourWsq.sqrt
             ⟨(m12 - m21) * inv4w, (m20 - m02) * inv4w, (m01 - m10) * inv4w, fourWsq * inv4w⟩
@@ -290,7 +289,10 @@ run_cmd
       /-- Whether the quaternion rotation angle is roughly equal to zero. -/
       @[inline]
       def isNearIdentity (q : $qTy) : Bool :=
-        2 * q.w.abs.acos < 2.827_296_549_232_347_4e-7
+        2 * q.w.abs.acos <
+          $(if cx.scalarTypeName = ``Float
+            then Lean.Syntax.mkScientificLit "2.827_296_549_232_347_4e-7"
+            else Lean.Syntax.mkScientificLit "0.002_847_144_6")
 
       /--
       The conjugate of the quaternion.
