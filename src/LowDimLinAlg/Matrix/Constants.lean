@@ -16,8 +16,7 @@ open Lean Elab Command
 open Internal
 
 run_cmd
-  scalars.forM fun cx => do
-    if !cx.isFloat then return
+  floats.forM fun cx => do
     for dims in dimensionalities do
       let mTy := cx.structure <| "Matrix" ++ toString dims.size
       elabCommand <| ← `(

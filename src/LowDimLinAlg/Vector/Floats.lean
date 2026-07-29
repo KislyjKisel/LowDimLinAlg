@@ -39,8 +39,7 @@ run_cmd
       def $toF64Arr (v : $f64vTy) (dst : FloatArray := by exact FloatArray.emptyWithCapacity $dimsSizeLit) : FloatArray :=
         $(flip dims.foldl (mkIdent `dst) fun r dim => app ``FloatArray.push #[r, vget `v dim])
     )
-    scalars.forM fun cx => do
-      if !cx.isFloat then return
+    floats.forM fun cx => do
       let vTy := cx.structure structureSuffix
       let sTy := cx.scalarType
       let sIsFinite := cx.scalarMember "isFinite"

@@ -1,5 +1,6 @@
 module
 
+public import LowDimLinAlg.Matrix.Accessors
 public import LowDimLinAlg.Matrix.Constants
 public import LowDimLinAlg.Matrix.Constructors
 public import LowDimLinAlg.Matrix.Conversion

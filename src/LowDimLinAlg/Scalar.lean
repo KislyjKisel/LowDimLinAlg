@@ -9,8 +9,7 @@ set_option hygiene false
 namespace LowDimLinAlg
 
 run_cmd
-  Internal.scalars.forM fun cx => do
-    if !cx.isFloat then return
+  Internal.floats.forM fun cx => do
     let sTy := cx.scalarType
     Lean.Elab.Command.elabCommand <| ← `(
       namespace $cx.scalarExtNamespace

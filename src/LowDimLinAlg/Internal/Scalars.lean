@@ -73,6 +73,8 @@ def scalars : Array ScalarContext := #[
   ⟨``ISize, "IS", .signedInteger⟩,
 ]
 
+def floats := scalars.filter ScalarContext.isFloat
+
 def scalarConvertFn? (cxFrom cxTo : ScalarContext) : Lean.Elab.Command.CommandElabM (Option Lean.Ident) := do
   let ident := Lean.mkIdent <| cxFrom.scalarTypeName.str <| "to" ++ cxTo.scalarTypeName.toString
   try

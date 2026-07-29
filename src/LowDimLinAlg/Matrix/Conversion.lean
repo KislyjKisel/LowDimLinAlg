@@ -4,6 +4,7 @@ public import LowDimLinAlg.Matrix.Types
 
 import LowDimLinAlg.Internal.Dimensionalities
 import LowDimLinAlg.Internal.Scalars
+import LowDimLinAlg.Internal.Syntax
 
 @[expose] public section
 
@@ -15,9 +16,6 @@ open Lean Elab Command
 open Internal
 
 run_cmd
-  let m (i j : Dimension) : Ident :=
-    mkIdent <| (`m).str s!"m{i.index + 1}{j.index + 1}"
-  let floats := scalars.filter fun cx => cx.isFloat
   for dims in dimensionalities do
     let structureSuffix := "Matrix" ++ toString dims.size
     floats.forM fun cx1 => do
@@ -31,7 +29,7 @@ run_cmd
           Lean.Elab.Command.elabCommand <| ← `(
             @[inline]
             def $idTo (m : $mTy1) : $mTy2 :=
-              ⟨$(dims.flatMap fun dim1 => dims.map fun dim2 => Syntax.mkApp s1To2 #[m dim1 dim2]),*⟩
+              ⟨$(dims.flatMap fun dim1 => dims.map fun dim2 => Syntax.mkApp s1To2 #[mget `m dim1 dim2]),*⟩
 
             abbrev $idOf := $idTo
           )

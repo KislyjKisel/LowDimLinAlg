@@ -17,8 +17,6 @@ open Internal
 
 run_cmd
   let byDecide ← `(by decide)
-  let m (i j : Nat) (v : Name := `m) : Ident :=
-    mkIdent <| v.str s!"m{i + 1}{j + 1}"
   for dims in dimensionalities do
     let mTy := mkIdent <| .mkSimple <| "F64Matrix" ++ toString dims.size
     let dimsSizeSqrLit := Syntax.mkNatLit <| dims.size * dims.size
@@ -77,7 +75,7 @@ run_cmd
                     let $a'' := FloatArray.uset
                       $a'
                       (offset + $(Syntax.mkNatLit usetIdx))
-                      $(m dim1.index dim2.index)
+                      $(mget `m dim1 dim2)
                       (Nat.lt_of_lt_of_eq (Lemmas.spanIndex a.size $dimsSizeSqrLit $(Syntax.mkNatLit usetIdx) offset size_le le_size $byDecide) this.symm)
                     have : $(a'').size = a.size := Eq.trans (Lemmas.FloatArray_size_uset $a' ..) this
                     $r:term

@@ -15,8 +15,7 @@ open Lean Elab Command
 open Internal
 
 run_cmd
-  scalars.forM fun cx => do
-    if !cx.isFloat then return
+  floats.forM fun cx => do
     let sTy := cx.scalarType
     let m2Ty : Ident := cx.structure "Matrix2"
     let m3Ty : Ident := cx.structure "Matrix3"
@@ -60,7 +59,6 @@ run_cmd
         m44 : $sTy
       deriving BEq, Inhabited, Repr
     )
-    let dmvs := dimensionalities.iter.zip #[m2Ty, m3Ty, m4Ty].iter
-    for (dims, mTy) in dmvs do
+    for (dims, mTy) in dimensionalities.iter.zip #[m2Ty, m3Ty, m4Ty].iter do
       addDocStringCore (← resolveGlobalConstNoOverload mTy) <|
         s!"{dims.size}×{dims.size} {cx.scalarTypeName} matrix.\n\nFields are stored in row-major order."
