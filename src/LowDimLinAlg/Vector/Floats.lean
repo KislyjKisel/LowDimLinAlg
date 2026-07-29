@@ -158,7 +158,9 @@ run_cmd
         -/
         @[inline]
         def lerp (start «end» : $vTy) (t : $sTy) : $vTy :=
-          start + t * («end» - start)
+          if t < 0.5
+            then start + («end» - start) * t
+            else «end» - («end» - start) * (1 - t)
 
         /--
         Reflect `v` across a line with a `normal`.

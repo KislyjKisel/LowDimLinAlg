@@ -372,7 +372,9 @@ run_cmd
       def lerpImpl (q1 q2 : $qTy) (t : $sTy) : $qTy :=
         normalize <|
           ofVector4 <|
-            q1.toVector4 * (1 - t) + q2.toVector4 * t
+            if t < 0.5
+              then q1.toVector4 + (q2.toVector4 - q1.toVector4) * t
+              else q2.toVector4 - (q2.toVector4 - q1.toVector4) * (1 - t)
 
       @[always_inline] private
       def slerpImpl (q1 q2 : $qTy) (dot t : $sTy) : $qTy :=

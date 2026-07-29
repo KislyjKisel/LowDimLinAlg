@@ -70,7 +70,9 @@ run_cmd
       -/
       @[inline]
       def lerp (start «end» value : $sTy) : $sTy :=
-        start + value * («end» - start)
+        if value < 0.5
+          then start + («end» - start) * value
+          else «end» - («end» - start) * (1 - value)
 
       /--
       Returns `value` normalized to the range.
