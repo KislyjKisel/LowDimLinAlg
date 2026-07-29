@@ -454,12 +454,18 @@ run_cmd
       end $qTy
     )
 
-/-- Converts the quaternion components to `Float`. -/
+/-- Converts the quaternion components to `Float` scalar type using `Float32.toFloat`. -/
 @[inline]
 def F32Quaternion.toF64 (q : F32Quaternion) : F64Quaternion :=
   ⟨q.x.toFloat, q.y.toFloat, q.z.toFloat, q.w.toFloat⟩
 
-/-- Converts the quaternion components to `Float32`. -/
+/-- Converts the quaternion components from `Float32` scalar type using `Float32.toFloat`. -/
+abbrev F64Quaternion.ofF32 := F32Quaternion.toF64
+
+/-- Converts the quaternion components to `Float32` scalar type using `Float.toFloat32`. -/
 @[inline]
 def F64Quaternion.toF32 (q : F64Quaternion) : F32Quaternion :=
   ⟨q.x.toFloat32, q.y.toFloat32, q.z.toFloat32, q.w.toFloat32⟩
+
+/-- Converts the quaternion components from `Float` scalar type using `Float.toFloat32`. -/
+abbrev F32Quaternion.ofF64 := F64Quaternion.toF32
