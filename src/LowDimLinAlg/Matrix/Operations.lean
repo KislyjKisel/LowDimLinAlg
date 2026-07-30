@@ -6,10 +6,9 @@ public import LowDimLinAlg.Matrix.Constructors
 public import LowDimLinAlg.Vector.Numbers
 
 meta import Lean.Elab.BuiltinNotation
-
-import LowDimLinAlg.Internal.Dimensionalities
-import LowDimLinAlg.Internal.Scalars
-import LowDimLinAlg.Internal.Syntax
+meta import LowDimLinAlg.Internal.Dimensionalities
+meta import LowDimLinAlg.Internal.Scalars
+meta import LowDimLinAlg.Internal.Syntax
 
 @[expose] public section
 

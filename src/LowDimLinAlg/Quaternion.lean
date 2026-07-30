@@ -4,7 +4,7 @@ public import LowDimLinAlg.Vector.Floats
 public import LowDimLinAlg.Vector.Swizzling
 public import LowDimLinAlg.Matrix
 
-import LowDimLinAlg.Internal.Scalars
+meta import LowDimLinAlg.Internal.Scalars
 
 @[expose] public section
 

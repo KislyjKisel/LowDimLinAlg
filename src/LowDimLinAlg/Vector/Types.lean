@@ -1,7 +1,7 @@
 module
 
-import LowDimLinAlg.Internal.Dimensionalities
-import LowDimLinAlg.Internal.Scalars
+meta import LowDimLinAlg.Internal.Dimensionalities
+meta import LowDimLinAlg.Internal.Scalars
 
 @[expose] public section
 

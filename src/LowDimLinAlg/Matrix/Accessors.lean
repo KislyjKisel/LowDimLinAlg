@@ -3,9 +3,9 @@ module
 public import LowDimLinAlg.Axis
 public import LowDimLinAlg.Matrix.Types
 
-import LowDimLinAlg.Internal.Dimensionalities
-import LowDimLinAlg.Internal.Scalars
-import LowDimLinAlg.Internal.Syntax
+meta import LowDimLinAlg.Internal.Dimensionalities
+meta import LowDimLinAlg.Internal.Scalars
+meta import LowDimLinAlg.Internal.Syntax
 
 @[expose] public section
 

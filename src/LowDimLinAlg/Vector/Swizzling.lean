@@ -2,7 +2,7 @@ module
 
 public import LowDimLinAlg.Vector.Boolean
 
-import LowDimLinAlg.Internal.Scalars
+meta import LowDimLinAlg.Internal.Scalars
 
 @[expose] public section
 

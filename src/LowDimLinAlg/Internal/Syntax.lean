@@ -1,6 +1,6 @@
 module
 
-public import LowDimLinAlg.Internal.Dimensionalities
+public meta import LowDimLinAlg.Internal.Dimensionalities
 
 public meta section
 

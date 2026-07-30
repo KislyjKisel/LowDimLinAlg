@@ -4,9 +4,9 @@ public import LowDimLinAlg.Internal.Lemmas
 public import LowDimLinAlg.Vector.Constants
 public import LowDimLinAlg.Vector.Numbers
 
-import LowDimLinAlg.Internal.Dimensionalities
-import LowDimLinAlg.Internal.Scalars
-import LowDimLinAlg.Internal.Syntax
+meta import LowDimLinAlg.Internal.Dimensionalities
+meta import LowDimLinAlg.Internal.Scalars
+meta import LowDimLinAlg.Internal.Syntax
 
 @[expose] public section
 
