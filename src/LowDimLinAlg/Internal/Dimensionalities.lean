@@ -12,10 +12,15 @@ structure Dimension where
   char : Char
 deriving Inhabited
 
+def Dimension.x : Dimension := ⟨0, 'x'⟩
+def Dimension.y : Dimension := ⟨1, 'y'⟩
+def Dimension.z : Dimension := ⟨2, 'z'⟩
+def Dimension.w : Dimension := ⟨3, 'w'⟩
+
 def dimensionalities : Array (Array Dimension) := #[
-  #[⟨0, 'x'⟩, ⟨1, 'y'⟩],
-  #[⟨0, 'x'⟩, ⟨1, 'y'⟩, ⟨2, 'z'⟩],
-  #[⟨0, 'x'⟩, ⟨1, 'y'⟩, ⟨2, 'z'⟩, ⟨3, 'w'⟩],
+  #[.x, .y],
+  #[.x, .y, .z],
+  #[.x, .y, .z, .w],
 ]
 
 def Dimension.str (dim : Dimension) : String :=
