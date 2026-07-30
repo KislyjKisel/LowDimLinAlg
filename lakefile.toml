@@ -3,6 +3,15 @@ version = "0.1.0"
 defaultTargets = ["LowDimLinAlg"]
 srcDir = "src"
 leanOptions.autoImplicit = false
+testDriver = "LowDimLinAlgTests"
+
+[[require]]
+name = "LSpec"
+git = "https://github.com/argumentcomputer/LSpec"
+rev = "9389649"
 
 [[lean_lib]]
 name = "LowDimLinAlg"
+
+[[lean_exe]]
+name = "LowDimLinAlgTests"
