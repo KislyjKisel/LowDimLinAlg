@@ -1,5 +1,6 @@
 module
 
+public import LowDimLinAlg.Axis
 public import LowDimLinAlg.Matrix.Types
 
 import LowDimLinAlg.Internal.Dimensionalities
@@ -21,13 +22,14 @@ run_cmd
     | 2 => "2nd"
     | 3 => "3rd"
     | n => toString n ++ "th"
-  floats.forM fun cx => do
-    for dims in dimensionalities do
+  for dims in dimensionalities do
+    let axisTy := mkIdent <| .mkSimple s!"Axis{dims.size}"
+    let dimsSizeLit := Syntax.mkNatLit dims.size
+    let dimsSizeSqrLit := Syntax.mkNatLit <| dims.size * dims.size
+    floats.forM fun cx => do
       let mTy := cx.structure <| "Matrix" ++ toString dims.size
       let vTy := cx.structure <| "Vector" ++ toString dims.size
       let sTy := cx.scalarType
-      let dimsSizeLit := Syntax.mkNatLit dims.size
-      let dimsSizeSqrLit := Syntax.mkNatLit <| dims.size * dims.size
       elabCommand <| ← `(namespace $mTy)
       for dim in dims do
         let rowFn := mkIdent <| .mkSimple s!"row{dim.index + 1}"
@@ -68,7 +70,7 @@ run_cmd
         addDocStringCore (← resolveGlobalConstNoOverload setColumnFn) <|
           s!"Replaces the {nth} column by the provided vector.\n\n"
       elabCommand <| ← `(
-        /-- Returns the row with the specified index. -/
+        /-- Returns the row with the specified index as a vector. -/
         @[inline]
         def row (m : $mTy) (i : Fin $dimsSizeLit) : $vTy :=
           match i with
@@ -76,12 +78,24 @@ run_cmd
             | $(Syntax.mkNatLit dim.index)  => $(dot `m s!"row{dim.index + 1}")
           )):matchAlt*
 
-        /-- Returns the column with the specified index. -/
+        /-- Returns the column with the specified index as a vector. -/
         @[inline]
         def column (m : $mTy) (j : Fin $dimsSizeLit) : $vTy :=
           match j with
           $(← dims.mapM fun dim => `(Lean.Parser.Term.matchAltExpr|
             | $(Syntax.mkNatLit dim.index)  => $(dot `m s!"column{dim.index + 1}")
+          )):matchAlt*
+
+        /--
+        Returns a vector that,
+        for a transformation matrix that operates on row vectors,
+        represents the result of rotating the specified axis by the matrix.
+        -/
+        @[inline]
+        def axis (m : $mTy) (axis : $axisTy) : $vTy :=
+          match axis with
+          $(← dims.mapM fun dim => `(Lean.Parser.Term.matchAltExpr|
+            | $(dot axisTy.getId dim.str)  => $(dot `m s!"row{dim.index + 1}")
           )):matchAlt*
 
         /-- Replaces the row with the specified index by the provided vector. -/
