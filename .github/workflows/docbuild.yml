@@ -1,0 +1,32 @@
+name: Run doc-gen4 and deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: leanprover/lean-action@v1
+        with:
+          working-directory: ./docbuild
+          auto-config: "false"
+          build: "true"
+          build-args: "LowDimLinAlg:docs"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: 'docbuild/.lake/build/doc'
+      - id: deployment
+        uses: actions/deploy-pages@v4
