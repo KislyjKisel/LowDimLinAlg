@@ -23,6 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: leanprover/lean-action@v1
+        env:
+          DISABLE_EQUATIONS: "1"
         with:
           auto-config: "false"
           build: "true"
