@@ -46,5 +46,5 @@ run_cmd
             $(app `mk <| Array.set! (dims.map fun d => vget `v d) dim.index (mkIdent `value))
         )
         addDocStringCore (← resolveGlobalConstNoOverload fId)
-          s!"Creates a vector `⟨{", ".intercalate <| Array.toList <| dims.map fun d => if d.index == dim.index then "value" else s!"v.{d.char}"}⟩`."
+          s!"Creates a vector `⟨{", ".intercalate <| Array.toList <| dims.map fun d => if d == dim then "value" else s!"v.{d.char}"}⟩`."
       elabCommand <| ← `(end $vTy)

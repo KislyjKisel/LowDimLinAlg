@@ -50,11 +50,11 @@ run_cmd
 
           @[inline]
           def $setRowFn (m : $mTy) (row : $vTy) : $mTy :=
-            ⟨$(dims.flatMap fun i => dims.map fun j => if i.index == dim.index then vget `row j else mget `m i j):term,*⟩
+            ⟨$(dims.flatMap fun i => dims.map fun j => if i == dim then vget `row j else mget `m i j):term,*⟩
 
           @[inline]
           def $setColumnFn (m : $mTy) (column : $vTy) : $mTy :=
-            ⟨$(dims.flatMap fun i => dims.map fun j => if j.index == dim.index then vget `column i else mget `m i j):term,*⟩
+            ⟨$(dims.flatMap fun i => dims.map fun j => if j == dim then vget `column i else mget `m i j):term,*⟩
         )
         let nth := th (dim.index + 1)
         addDocStringCore (← resolveGlobalConstNoOverload rowFn) <|
@@ -63,7 +63,7 @@ run_cmd
           s!"Returns the {nth} column as a vector.\n\n"
         addDocStringCore (← resolveGlobalConstNoOverload axisFn) <|
           s!"Returns the {nth} row as a vector.\n\n"
-          ++ "For a transformation matrix that operates on row vectors this vector represents"
+          ++ "For a transformation matrix that operates on **row vectors** this vector represents"
           ++ s!" the result of rotating the {dim.char.toUpper} axis by the matrix."
         addDocStringCore (← resolveGlobalConstNoOverload setRowFn) <|
           s!"Replaces the {nth} row by the provided vector.\n\n"
@@ -88,7 +88,7 @@ run_cmd
 
         /--
         Returns a vector that,
-        for a transformation matrix that operates on row vectors,
+        for a transformation matrix that operates on **row vectors**,
         represents the result of rotating the specified axis by the matrix.
         -/
         @[inline]
@@ -178,6 +178,11 @@ run_cmd
           )):matchAlt*
           | ⟨n+$dimsSizeSqrLit, h⟩ => False.elim <|
             Nat.lt_irrefl $dimsSizeSqrLit (Nat.lt_of_le_of_lt (Nat.le_add_left $dimsSizeSqrLit n) h)
+
+        /-- Returns the diagonal of the matrix. -/
+        @[inline]
+        def diagonal (m : $mTy) : $vTy :=
+          ⟨$(dims.map fun i => mget `m i i):term,*⟩
 
         end $mTy
       )

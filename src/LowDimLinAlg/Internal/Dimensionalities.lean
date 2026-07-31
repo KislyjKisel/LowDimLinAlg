@@ -34,3 +34,8 @@ def Dimension.ident (dim : Dimension) : Lean.Syntax.Ident :=
 
 def Dimension.indexLit (dim : Dimension) : Lean.Syntax.Term :=
   Lean.Syntax.mkNatLit dim.index
+
+def Dimension.beq (dim1 dim2 : Dimension) : Bool :=
+  dim1.index == dim2.index
+
+instance : BEq Dimension := ⟨Dimension.beq⟩

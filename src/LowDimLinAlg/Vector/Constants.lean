@@ -70,7 +70,7 @@ run_cmd
           elabCommand <| ← `(
             @[inline]
             def $unitPosId : $vTy :=
-              $(app `mk <| dims.map fun d => if d.index == dim.index then lit1 else lit0)
+              $(app `mk <| dims.map fun d => if d == dim then lit1 else lit0)
           )
           addDocStringCore (← resolveGlobalConstNoOverload unitPosId)
             s!"A unit vector pointing along the positive {dim.char.toUpper} axis."
@@ -79,7 +79,7 @@ run_cmd
           elabCommand <| ← `(
             @[inline]
             def $unitNegId : $vTy :=
-              $(app `mk <| dims.map fun d => if d.index == dim.index then app ``Neg.neg #[lit1] else lit0)
+              $(app `mk <| dims.map fun d => if d == dim then app ``Neg.neg #[lit1] else lit0)
           )
           addDocStringCore (← resolveGlobalConstNoOverload unitNegId)
             s!"A unit vector pointing along the negative {dim.char.toUpper} axis."

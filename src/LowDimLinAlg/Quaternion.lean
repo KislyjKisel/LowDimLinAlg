@@ -162,7 +162,7 @@ run_cmd
       /--
       Creates a quaternion from a 3x3 rotation matrix.
 
-      Expects a matrix intended to be used with row vectors.
+      Expects a matrix intended to be used with **row vectors**.
 
       Note if the input matrix contain scales, shears, or other non-rotation transformations then
       the output of this function is ill-defined.
@@ -176,7 +176,7 @@ run_cmd
       /--
       Creates a quaternion from a 3x3 rotation matrix inside a homogeneous 4x4 matrix.
 
-      Expects a matrix intended to be used with row vectors.
+      Expects a matrix intended to be used with **row vectors**.
 
       Note if the upper 3x3 matrix contain scales, shears, or other non-rotation transformations then
       the output of this function is ill-defined.
@@ -234,7 +234,7 @@ run_cmd
       /--
       Converts the quaternion to a 3x3 rotation matrix.
 
-      The resulting matrix must be used with row vectors,
+      The resulting matrix must be used with **row vectors**,
       e.g. when multiplying a vector by the matrix the vector must be on the left.
       -/
       @[inline]
@@ -244,7 +244,7 @@ run_cmd
       /--
       Converts the quaternion to a 4x4 homogeneous matrix.
 
-      The resulting matrix must be used with row vectors,
+      The resulting matrix must be used with **row vectors**,
       e.g. when multiplying a vector by the matrix the vector must be on the left.
       -/
       @[inline]
