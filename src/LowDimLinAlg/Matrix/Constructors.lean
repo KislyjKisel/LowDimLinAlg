@@ -86,6 +86,59 @@ run_cmd
             let cos := angle.cos
             ⟨cos, sin, -sin, cos⟩
         )
+      if dims.size = 3 then
+        elabCommand <| ← `(
+          /--
+          Creates a matrix representing a rotation around X axis.
+
+          The matrix is intended to be used with **row vectors**.
+          In a right-handed coordinate system the rotation is clockwise
+          when the axis is the view direction.
+          -/
+          @[inline]
+          def ofAngleX (angle : $sTy) : $mTy :=
+            let sin := angle.sin
+            let cos := angle.cos
+            ⟨
+              1, 0, 0,
+              0, cos, sin,
+              0, -sin, cos,
+            ⟩
+
+          /--
+          Creates a matrix representing a rotation around Y axis.
+
+          The matrix is intended to be used with **row vectors**.
+          In a right-handed coordinate system the rotation is clockwise
+          when the axis is the view direction.
+          -/
+          @[inline]
+          def ofAngleY (angle : $sTy) : $mTy :=
+            let sin := angle.sin
+            let cos := angle.cos
+            ⟨
+              cos, 0, -sin,
+              0, 1, 0,
+              sin, 0, cos,
+            ⟩
+
+          /--
+          Creates a matrix representing a rotation around Z axis.
+
+          The matrix is intended to be used with **row vectors**.
+          In a right-handed coordinate system the rotation is clockwise
+          when the axis is the view direction.
+          -/
+          @[inline]
+          def ofAngleZ (angle : $sTy) : $mTy :=
+            let sin := angle.sin
+            let cos := angle.cos
+            ⟨
+              cos, sin, 0,
+              -sin, cos, 0,
+              0, 0, 1,
+            ⟩
+        )
       if dims.size > 2 then
         let smallDimsSize := dims.size - 1
         let smallVTy := cx.structure s!"Vector{smallDimsSize}"
