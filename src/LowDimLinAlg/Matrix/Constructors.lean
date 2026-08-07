@@ -1,6 +1,7 @@
 module
 
-public import LowDimLinAlg.Matrix.Types
+public import LowDimLinAlg.Matrix.Constants
+public import LowDimLinAlg.Vector.Floats
 
 meta import LowDimLinAlg.Internal.Dimensionalities
 meta import LowDimLinAlg.Internal.Scalars
@@ -138,6 +139,40 @@ run_cmd
               -sin, cos, 0,
               0, 0, 1,
             ⟩
+
+          /--
+          Creates a rotation matrix from an axis and an angle.
+
+          In a right-handed coordinate system the rotation is clockwise
+          when the axis is the view direction.
+
+          Panics in debug if the axis is not normalized.
+          -/
+          @[inline]
+          def ofAxisAngle (axis : $vTy) (angle : $sTy) : $mTy :=
+            debug_assert! axis.isNormalized
+            let ⟨x, y, z⟩ := axis
+            let sin := angle.sin
+            let cos := angle.cos
+            ⟨
+              x * x * (1 - cos) + cos, y * (x * (1 - cos)) + z * sin, z * (x * (1 - cos)) - y * sin,
+              y * (x * (1 - cos)) - z * sin, y * y * (1 - cos) + cos, y * z * (1 - cos) + x * sin,
+              z * (x * (1 - cos)) + y * sin, y * z * (1 - cos) - x * sin, z * z * (1 - cos) + cos,
+            ⟩
+
+          /--
+          Creates a rotation matrix from a rotation vector.
+          Normalized vector is used as an axis and its length as an angle.
+
+          In a right-handed coordinate system the rotation is clockwise
+          when the axis is the view direction.
+          -/
+          @[inline]
+          def ofScaledAxis (axis : $vTy) : $mTy :=
+            let len := axis.length
+            if len == 0.0
+              then identity
+              else ofAxisAngle (axis / len) len
         )
       if dims.size > 2 then
         let smallDimsSize := dims.size - 1
@@ -187,8 +222,12 @@ run_cmd
         )
         addDocStringCore (← resolveGlobalConstNoOverload ofSmallTransformFn) <|
           "Creates an affine transformation matrix from a smaller transformation matrix"
-          ++ "by extending it with zeros and setting the last element to `1`.\n"
+          ++ " by extending it with zeros and setting the last element to `1`.\n"
           ++ "\n"
           ++ "The result can be used with points and directions represented as"
-          ++ "vectors of the lower dimension via"
+          ++ " vectors of the lower dimension via"
           ++ s!" `LowDimLinAlg.{mTy.getId}.transformPointAffine` and `LowDimLinAlg.{mTy.getId}.transformDirection`.\n"
+        elabCommand <| ← `(
+          @[inherit_doc $ofSmallTransformFn]
+          abbrev $(mkIdent <| smallMTy.getId.str s!"toMatrix{dims.size}") := $ofSmallTransformFn
+        )

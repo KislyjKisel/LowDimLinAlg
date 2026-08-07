@@ -12,17 +12,19 @@ set_option hygiene false
 
 namespace LowDimLinAlg
 
+open Lean Elab Command
+
 run_cmd
   Internal.floats.forM fun cx => do
-    let sTy := cx.scalarType
-    let qTy := cx.structure "Quaternion"
-    let v3Ty := cx.structure "Vector3"
-    let v4Ty := cx.structure "Vector4"
-    let m3Ty := cx.structure "Matrix3"
-    let m4Ty := cx.structure "Matrix4"
+    let sTy : Ident := cx.scalarType
+    let qTy : Ident := cx.structure "Quaternion"
+    let v3Ty : Ident := cx.structure "Vector3"
+    let v4Ty : Ident := cx.structure "Vector4"
+    let m3Ty : Ident := cx.structure "Matrix3"
+    let m4Ty : Ident := cx.structure "Matrix4"
     let sEpsilon := cx.scalarExtMember "epsilon"
     let sPi := cx.scalarExtMember "pi"
-    Lean.Elab.Command.elabCommand <| ← `(
+    elabCommand <| ← `(
       structure $qTy:ident where
         x : $sTy
         y : $sTy
@@ -53,6 +55,9 @@ run_cmd
       /--
       Creates a quaternion from an axis and an angle.
 
+      In a right-handed coordinate system the rotation is clockwise
+      when the axis is the view direction.
+
       Panics in debug if the axis is not normalized.
       -/
       @[inline]
@@ -65,6 +70,9 @@ run_cmd
       /--
       Creates a quaternion from a rotation vector.
       Normalized vector is used as an axis and its length as an angle.
+
+      In a right-handed coordinate system the rotation is clockwise
+      when the axis is the view direction.
       -/
       @[inline]
       def ofScaledAxis (axis : $v3Ty) : $qTy :=
@@ -73,19 +81,34 @@ run_cmd
           then identity
           else ofAxisAngle (axis / len) len
 
-      /-- Creates a quaternion from an angle around the X axis. -/
+      /--
+      Creates a quaternion from an angle around the X axis.
+
+      In a right-handed coordinate system the rotation is clockwise
+      when the axis is the view direction.
+      -/
       @[inline]
       def ofAngleX (angle : $sTy) : $qTy :=
         let angle := angle * 0.5
         ⟨angle.sin, 0, 0, angle.cos⟩
 
-      /-- Creates a quaternion from an angle around the Y axis. -/
+      /--
+      Creates a quaternion from an angle around the Y axis.
+
+      In a right-handed coordinate system the rotation is clockwise
+      when the axis is the view direction.
+      -/
       @[inline]
       def ofAngleY (angle : $sTy) : $qTy :=
         let angle := angle * 0.5
         ⟨0, angle.sin, 0, angle.cos⟩
 
-      /-- Creates a quaternion from an angle around the Z axis. -/
+      /--
+      Creates a quaternion from an angle around the Z axis.
+
+      In a right-handed coordinate system the rotation is clockwise
+      when the axis is the view direction.
+      -/
       @[inline]
       def ofAngleZ (angle : $sTy) : $qTy :=
         let angle := angle * 0.5
@@ -231,6 +254,40 @@ run_cmd
         1 - 2 * q.x * q.x - 2 * q.y * q.y,
       ⟩
 
+      /-- The results of rotating main axes by the quaternion. -/
+      @[inline]
+      def axes (q : $qTy) : $v3Ty × $v3Ty × $v3Ty :=
+        let q2x := 2 * q.x
+        let q2y := 2 * q.y
+        let q2z := 2 * q.z
+        let q2xx := q2x * q.x
+        let q2xy := q2x * q.y
+        let q2xz := q2x * q.z
+        let q2yy := q2y * q.y
+        let q2yz := q2y * q.z
+        let q2yw := q2y * q.w
+        let q2xw := q2x * q.w
+        let q2zz := q2z * q.z
+        let q2zw := q2z * q.w
+        (
+          ⟨
+            1 - q2yy - q2zz,
+            q2xy + q2zw,
+            q2xz - q2yw,
+          ⟩,
+          ⟨
+            q2xy - q2zw,
+            1 - q2xx - q2zz,
+            q2yz + q2xw,
+          ⟩,
+          ⟨
+            q2xz + q2yw,
+            q2yz - q2xw,
+            1 - q2xx - q2yy,
+          ⟩,
+        )
+
+
       /--
       Converts the quaternion to a 3x3 rotation matrix.
 
@@ -239,7 +296,8 @@ run_cmd
       -/
       @[inline]
       def toMatrix3 (q : $qTy) : $m3Ty :=
-        .ofAxes q.xAxis q.yAxis q.zAxis
+        let (x, y, z) := q.axes
+        .ofAxes x y z
 
       /--
       Converts the quaternion to a 4x4 homogeneous matrix.
@@ -249,7 +307,8 @@ run_cmd
       -/
       @[inline]
       def toMatrix4 (q : $qTy) : $m4Ty :=
-        .ofAxes { q.xAxis with w := 0 } { q.yAxis with w := 0 } { q.zAxis with w := 0 } ⟨0, 0, 0, 1⟩
+        let (x, y, z) := q.axes
+        .ofAxes { x with w := 0 } { y with w := 0 } { z with w := 0 } ⟨0, 0, 0, 1⟩
 
       /--
       Dot product of two quaternions.
@@ -451,6 +510,52 @@ run_cmd
           else inline slerpShortest q target <| $(cx.scalarExtMember "clamp") (-1) 1 (maxRotation / angle)
 
       end $qTy
+
+      namespace $m3Ty
+
+      /--
+      Creates a rotation matrix from a quaternion.
+
+      The resulting matrix must be used with **row vectors**,
+      e.g. when multiplying a vector by the matrix the vector must be on the left.
+      -/
+      abbrev ofQuaternion (q : $qTy) : $m3Ty := q.toMatrix3
+
+      /--
+      Converts the matrix to a quaternion.
+
+      Assumes the matrix is intended to be used with **row vectors** and represents a rotation.
+      If the input matrix contain scales, shears, or other non-rotation transformations then
+      the output of this function is ill-defined.
+
+      Panics in debug if any matrix row is not normalized.
+      -/
+      abbrev toQuaternion : $m3Ty → $qTy := .ofMatrix3
+
+      end $m3Ty
+
+      namespace $m4Ty
+
+      /--
+      Creates a homogeneous rotation matrix from a quaternion.
+
+      The resulting matrix must be used with **row vectors**,
+      e.g. when multiplying a vector by the matrix the vector must be on the left.
+      -/
+      abbrev ofQuaternion (q : $qTy) : $m4Ty := q.toMatrix4
+
+      /--
+      Converts the matrix to a quaternion.
+
+      Assumes the matrix is intended to be used with **row vectors**, is homogeneous and represents a rotation.
+      If the upper 3x3 matrix contain scales, shears, or other non-rotation transformations then
+      the output of this function is ill-defined.
+
+      Panics in debug if any row of the upper 3x3 rotation matrix is not normalized.
+      -/
+      abbrev toQuaternion : $m4Ty → $qTy := .ofMatrix4
+
+      end $m4Ty
     )
 
 /-- Converts the quaternion components to `Float` scalar type using `Float32.toFloat`. -/
