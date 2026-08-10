@@ -174,6 +174,314 @@ run_cmd
               then identity
               else ofAxisAngle (axis / len) len
         )
+      if dims.size = 4 then
+        elabCommand <| ← `(
+          /--
+          Creates a perspective projection matrix from a frustum.
+
+          Expects a right-handed Z-up view space input with +Y forward.
+          Outputs NDC with Z in [-1, 1] and Y-up.
+
+          For a left-handed Z-up view space with -Y forward flip the sign of the 2nd row.
+
+          Panics in debug if `left` and `right` or `top` and `bottom` are equal,
+          if near is not positive, or if `far` is not greater than `near`.
+          -/
+          @[inline]
+          def frustumSymDepth (left right bottom top near far : $sTy) : $mTy :=
+            debug_assert! near > 0
+            debug_assert! far > near
+            debug_assert! right != left
+            debug_assert! top != bottom
+            let invRL := 1 / (right - left)
+            let invTB := 1 / (top - bottom)
+            let invFN := 1 / (far - near)
+            let ax := 2 * near * invRL
+            let ay := 2 * near * invTB
+            let cx := -(right + left) * invRL
+            let cy := -(top + bottom) * invTB
+            let dz := (far + near) * invFN
+            let tz := -(2 * far * near * invFN)
+            ⟨
+              ax, 0, 0, 0,
+              cx, cy, dz, 1,
+              0, ay, 0, 0,
+              0, 0, tz, 0,
+            ⟩
+
+          /--
+          Creates a perspective projection matrix from a frustum.
+
+          Expects a right-handed Z-up view space input with +Y forward.
+          Outputs NDC with Z in [0, 1] and Y-up.
+
+          For a left-handed Z-up view space with -Y forward flip the sign of the 2nd row.
+
+          Panics in debug if `left` and `right` or `top` and `bottom` are equal,
+          if `near` is not positive, or if `far` is not greater than `near`.
+          -/
+          @[inline]
+          def frustumPosDepth (left right bottom top near far : $sTy) : $mTy :=
+            debug_assert! near > 0
+            debug_assert! far > near
+            debug_assert! right != left
+            debug_assert! top != bottom
+            let invRL := 1 / (right - left)
+            let invTB := 1 / (top - bottom)
+            let invFN := 1 / (far - near)
+            let ax := 2 * near * invRL
+            let ay := 2 * near * invTB
+            let cx := -(right + left) * invRL
+            let cy := -(top + bottom) * invTB
+            let dz := far * invFN
+            let tz := -(far * near * invFN)
+            ⟨
+              ax, 0, 0, 0,
+              cx, cy, dz, 1,
+              0, ay, 0, 0,
+              0, 0, tz, 0,
+            ⟩
+
+          /--
+          Creates a symmetric perspective projection matrix.
+
+          Expects a right-handed Z-up view space input with +Y forward.
+          Outputs NDC with Z in [-1, 1] and Y-up.
+
+          For a left-handed Z-up view space with -Y forward flip the sign
+          of `m23` and `m24` or of the 2nd row.
+
+          Panics in debug if `fovY` or `aspect` is not positive,
+          if `near` is not positive, or if `far` is not greater than `near`.
+          -/
+          @[inline]
+          def perspectiveSymDepth (fovY aspect near far : $sTy) : $mTy :=
+            debug_assert! near > 0
+            debug_assert! far > near
+            debug_assert! fovY > 0
+            debug_assert! aspect > 0
+            let tanHalfFov := (fovY * 0.5).tan
+            let ⟨sx, sy⟩ := (1 / (aspect * tanHalfFov), 1 / tanHalfFov)
+            let invFN := 1 / (far - near)
+            let dz := (far + near) * invFN
+            let tz := -(2 * far * near * invFN)
+            ⟨
+              sx, 0, 0, 0,
+              0, 0, dz, 1,
+              0, sy, 0, 0,
+              0, 0, tz, 0,
+            ⟩
+
+          /--
+          Creates a symmetric perspective projection matrix.
+
+          Expects a right-handed Z-up view space input with +Y forward.
+          Outputs NDC with Z in [0, 1] and Y-up.
+
+          For a left-handed Z-up view space with -Y forward flip the sign
+          of `m23` and `m24` or of the 2nd row.
+
+          Panics in debug if `fovY` or `aspect` is not positive,
+          if `near` is not positive, or if `far` is not greater than `near`.
+          -/
+          @[inline]
+          def perspectivePosDepth (fovY aspect near far : $sTy) : $mTy :=
+            debug_assert! near > 0
+            debug_assert! far > near
+            debug_assert! fovY > 0
+            debug_assert! aspect > 0
+            let tanHalfFov := (fovY * 0.5).tan
+            let ⟨sx, sy⟩ := (1 / (aspect * tanHalfFov), 1 / tanHalfFov)
+            let invFN := 1 / (far - near)
+            let dz := far * invFN
+            let tz := -(far * near * invFN)
+            ⟨
+              sx, 0, 0, 0,
+              0, 0, dz, 1,
+              0, sy, 0, 0,
+              0, 0, tz, 0,
+            ⟩
+
+          /--
+          Creates a symmetric perspective projection matrix
+          with an infinite far plane.
+
+          Expects a right-handed Z-up view space input with +Y forward.
+          Outputs NDC with Z in [-1, 1] and Y-up.
+
+          For a left-handed Z-up view space with -Y forward flip the sign
+          of `m23` and `m24` or of the 2nd row.
+
+          Panics in debug if `fovY` or `aspect` is not positive,
+          or if `near` is not positive.
+          -/
+          @[inline]
+          def perspectiveInfSymDepth (fovY aspect near : $sTy) : $mTy :=
+            debug_assert! (near > 0)
+            debug_assert! fovY > 0
+            debug_assert! aspect > 0
+            let tanHalfFov := (fovY * 0.5).tan
+            let ⟨sx, sy⟩ := (1 / (aspect * tanHalfFov), 1 / tanHalfFov)
+            let tz := -(2 * near)
+            ⟨
+              sx, 0, 0, 0,
+              0, 0, 1, 1,
+              0, sy, 0, 0,
+              0, 0, tz, 0,
+            ⟩
+
+          /--
+          Creates a symmetric perspective projection matrix
+          with an infinite far plane.
+
+          Expects a right-handed Z-up view space input with +Y forward.
+          Outputs NDC with Z in [0, 1] and Y-up.
+
+          For a left-handed Z-up view space with -Y forward flip the sign
+          of `m23` and `m24` or of the 2nd row.
+
+          Panics in debug if `fovY` or `aspect` is not positive,
+          or if `near` is not positive.
+          -/
+          @[inline]
+          def perspectiveInfPosDepth (fovY aspect near : $sTy) : $mTy :=
+            debug_assert! (near > 0)
+            debug_assert! fovY > 0
+            debug_assert! aspect > 0
+            let tanHalfFov := (fovY * 0.5).tan
+            let ⟨sx, sy⟩ := (1 / (aspect * tanHalfFov), 1 / tanHalfFov)
+            let tz := -near
+            ⟨
+              sx, 0, 0, 0,
+              0, 0, 1, 1,
+              0, sy, 0, 0,
+              0, 0, tz, 0,
+            ⟩
+
+          /--
+          Creates a symmetric perspective projection matrix
+          with an infinite far plane and reversed depth.
+
+          Expects a right-handed Z-up view space input with +Y forward.
+          Outputs NDC with Z in [-1, 1] and Y-up, with near mapped to 1 and far mapped
+          to -1 in the infinite-far limit.
+
+          For a left-handed Z-up view space with -Y forward flip the sign
+          of `m23` and `m24` or of the 2nd row.
+
+          Panics in debug if `fovY` or `aspect` is not positive,
+          or if `near` is not positive.
+          -/
+          @[inline]
+          def perspectiveInfRevSymDepth (fovY aspect near : $sTy) : $mTy :=
+            debug_assert! (near > 0)
+            debug_assert! fovY > 0
+            debug_assert! aspect > 0
+            let tanHalfFov := (fovY * 0.5).tan
+            let ⟨sx, sy⟩ := (1 / (aspect * tanHalfFov), 1 / tanHalfFov)
+            let tz := 2 * near
+            ⟨
+              sx, 0, 0, 0,
+              0, 0, -1, 1,
+              0, sy, 0, 0,
+              0, 0, tz, 0,
+            ⟩
+
+          /--
+          Creates a symmetric perspective projection matrix
+          with an infinite far plane and reversed depth.
+
+          Expects a right-handed Z-up view space input with +Y forward.
+          Outputs NDC with Z in [0, 1] and Y-up, with near mapped to 1 and far mapped
+          to 0 in the infinite-far limit.
+
+          For a left-handed Z-up view space with -Y forward flip the sign
+          of `m23` and `m24` or of the 2nd row.
+
+          Panics in debug if `fovY` or `aspect` is not positive,
+          or if `near` is not positive.
+          -/
+          @[inline]
+          def perspectiveInfRevPosDepth (fovY aspect near : $sTy) : $mTy :=
+            debug_assert! (near > 0)
+            debug_assert! fovY > 0
+            debug_assert! aspect > 0
+            let tanHalfFov := (fovY * 0.5).tan
+            let ⟨sx, sy⟩ := (1 / (aspect * tanHalfFov), 1 / tanHalfFov)
+            let tz := near
+            ⟨
+              sx, 0, 0, 0,
+              0, 0, 0, 1,
+              0, sy, 0, 0,
+              0, 0, tz, 0,
+            ⟩
+
+          /--
+          Creates an orthographic projection matrix.
+
+          Expects a right-handed Z-up view space input with +Y forward.
+          Outputs NDC with Z in [-1, 1] and Y-up.
+
+          For a left-handed Z-up view space with -Y forward flip the sign
+          of `m23` or of the 2nd row.
+
+          Panics in debug if the distance between any two opposite sides is zero,
+          or if `far` equals `near`.
+          -/
+          @[inline]
+          def orthographicSymDepth (left right bottom top near far : $sTy) : $mTy :=
+            debug_assert! right != left
+            debug_assert! top != bottom
+            debug_assert! far != near
+            let invRL := 1 / (right - left)
+            let invTB := 1 / (top - bottom)
+            let invFN := 1 / (far - near)
+            let ax := 2 * invRL
+            let ay := 2 * invTB
+            let tx := -(right + left) * invRL
+            let ty := -(top + bottom) * invTB
+            let dz := 2 * invFN
+            let tz := -(far + near) * invFN
+            ⟨
+              ax, 0, 0, 0,
+              0, 0, dz, 0,
+              0, ay, 0, 0,
+              tx, ty, tz, 1,
+            ⟩
+
+          /--
+          Creates an orthographic projection matrix .
+
+          Expects a right-handed Z-up view space input with +Y forward.
+          Outputs NDC with Z in [0, 1] and Y-up.
+
+          For a left-handed Z-up view space with -Y forward flip the sign
+          of `m23` or of the 2nd row.
+
+          Panics in debug if the distance between any two opposite sides is zero,
+          or if `far` equals `near`.
+          -/
+          @[inline]
+          def orthographicPosDepth (left right bottom top near far : $sTy) : $mTy :=
+            debug_assert! right != left
+            debug_assert! top != bottom
+            debug_assert! far != near
+            let invRL := 1 / (right - left)
+            let invTB := 1 / (top - bottom)
+            let invFN := 1 / (far - near)
+            let ax := 2 * invRL
+            let ay := 2 * invTB
+            let tx := -(right + left) * invRL
+            let ty := -(top + bottom) * invTB
+            let dz := invFN
+            let tz := -(near * invFN)
+            ⟨
+              ax, 0, 0, 0,
+              0, 0, dz, 0,
+              0, ay, 0, 0,
+              tx, ty, tz, 1,
+            ⟩
+        )
       if dims.size > 2 then
         let smallDimsSize := dims.size - 1
         let smallVTy := cx.structure s!"Vector{smallDimsSize}"
