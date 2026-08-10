@@ -173,15 +173,82 @@ run_cmd
             if len == 0.0
               then identity
               else ofAxisAngle (axis / len) len
+
+          /--
+          Creates a view matrix given a view direction and an upward vector.
+          Transforms right-handed world space points into right-handed **Z-up** view space.
+
+          The resulting matrix is intended to be used with row vectors.
+
+          Panics in debug if either direction or up vector is not normalized.
+          -/
+          @[inline]
+          def lookTo (up dir : $vTy) : $mTy :=
+            debug_assert! dir.isNormalized && up.isNormalized
+            let right := dir.cross up |>.normalize
+            let up' := right.cross dir
+            ⟨
+              right.x, dir.x, up'.x,
+              right.y, dir.y, up'.y,
+              right.z, dir.z, up'.z,
+            ⟩
+
+          /--
+          Creates a view matrix given an eye position, a target position and an upward vector.
+          Transforms right-handed world space points into right-handed **Z-up** view space.
+
+          The resulting matrix is intended to be used with row vectors.
+          It does not contain translation.
+
+          Panics in debug if up vector is not normalized or
+          the distance between eye and target is zero.
+          -/
+          @[inline]
+          def lookAt (up eye target : $vTy) : $mTy :=
+            lookTo up (target - eye).normalize
         )
       if dims.size = 4 then
+        let v3Ty := cx.structure "Vector3"
         elabCommand <| ← `(
+          /--
+          Creates a view matrix given an eye position, a view direction and upward vector.
+          Transforms right-handed world space points into right-handed **Z-up** view space.
+
+          The resulting matrix is intended to be used with row vectors.
+
+          Panics in debug if either direction or up vector is not normalized.
+          -/
+          @[inline]
+          def lookTo (up eye dir : $v3Ty) : $mTy :=
+            debug_assert! dir.isNormalized && up.isNormalized
+            let right := dir.cross up |>.normalize
+            let up' := right.cross dir
+            ⟨
+              right.x, dir.x, up'.x, 0,
+              right.y, dir.y, up'.y, 0,
+              right.z, dir.z, up'.z, 0,
+              -(eye.dot right), -(eye.dot dir), -(eye.dot up'), 1,
+            ⟩
+
+          /--
+          Creates a view matrix given an eye position, a target position and an upward vector.
+          Transforms right-handed world space points into right-handed **Z-up** view space.
+
+          The resulting matrix is intended to be used with row vectors.
+
+          Panics in debug if up vector is not normalized or
+          the distance between eye and target is zero.
+          -/
+          @[inline]
+          def lookAt (up eye target : $v3Ty) : $mTy :=
+            lookTo up eye (target - eye).normalize
+
           /--
           Creates a perspective projection matrix from a frustum.
 
           Expects a right-handed Z-up view space input with +Y forward.
           Outputs NDC with Z in [-1, 1] and Y-up.
-
+          The resulting matrix is intended to be used with row vectors.
           For a left-handed Z-up view space with -Y forward flip the sign of the 2nd row.
 
           Panics in debug if `left` and `right` or `top` and `bottom` are equal,
@@ -214,7 +281,7 @@ run_cmd
 
           Expects a right-handed Z-up view space input with +Y forward.
           Outputs NDC with Z in [0, 1] and Y-up.
-
+          The resulting matrix is intended to be used with row vectors.
           For a left-handed Z-up view space with -Y forward flip the sign of the 2nd row.
 
           Panics in debug if `left` and `right` or `top` and `bottom` are equal,
@@ -247,7 +314,7 @@ run_cmd
 
           Expects a right-handed Z-up view space input with +Y forward.
           Outputs NDC with Z in [-1, 1] and Y-up.
-
+          The resulting matrix is intended to be used with row vectors.
           For a left-handed Z-up view space with -Y forward flip the sign
           of `m23` and `m24` or of the 2nd row.
 
@@ -277,7 +344,7 @@ run_cmd
 
           Expects a right-handed Z-up view space input with +Y forward.
           Outputs NDC with Z in [0, 1] and Y-up.
-
+          The resulting matrix is intended to be used with row vectors.
           For a left-handed Z-up view space with -Y forward flip the sign
           of `m23` and `m24` or of the 2nd row.
 
@@ -308,7 +375,7 @@ run_cmd
 
           Expects a right-handed Z-up view space input with +Y forward.
           Outputs NDC with Z in [-1, 1] and Y-up.
-
+          The resulting matrix is intended to be used with row vectors.
           For a left-handed Z-up view space with -Y forward flip the sign
           of `m23` and `m24` or of the 2nd row.
 
@@ -336,7 +403,7 @@ run_cmd
 
           Expects a right-handed Z-up view space input with +Y forward.
           Outputs NDC with Z in [0, 1] and Y-up.
-
+          The resulting matrix is intended to be used with row vectors.
           For a left-handed Z-up view space with -Y forward flip the sign
           of `m23` and `m24` or of the 2nd row.
 
@@ -365,7 +432,7 @@ run_cmd
           Expects a right-handed Z-up view space input with +Y forward.
           Outputs NDC with Z in [-1, 1] and Y-up, with near mapped to 1 and far mapped
           to -1 in the infinite-far limit.
-
+          The resulting matrix is intended to be used with row vectors.
           For a left-handed Z-up view space with -Y forward flip the sign
           of `m23` and `m24` or of the 2nd row.
 
@@ -394,7 +461,7 @@ run_cmd
           Expects a right-handed Z-up view space input with +Y forward.
           Outputs NDC with Z in [0, 1] and Y-up, with near mapped to 1 and far mapped
           to 0 in the infinite-far limit.
-
+          The resulting matrix is intended to be used with row vectors.
           For a left-handed Z-up view space with -Y forward flip the sign
           of `m23` and `m24` or of the 2nd row.
 
@@ -421,7 +488,7 @@ run_cmd
 
           Expects a right-handed Z-up view space input with +Y forward.
           Outputs NDC with Z in [-1, 1] and Y-up.
-
+          The resulting matrix is intended to be used with row vectors.
           For a left-handed Z-up view space with -Y forward flip the sign
           of `m23` or of the 2nd row.
 
@@ -454,7 +521,7 @@ run_cmd
 
           Expects a right-handed Z-up view space input with +Y forward.
           Outputs NDC with Z in [0, 1] and Y-up.
-
+          The resulting matrix is intended to be used with row vectors.
           For a left-handed Z-up view space with -Y forward flip the sign
           of `m23` or of the 2nd row.
 
