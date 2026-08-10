@@ -49,6 +49,7 @@ theorem spanIndexNat
         apply Nat.lt_add_of_pos_right
         assumption
 
+set_option backward.isDefEq.respectTransparency.types false in
 theorem FloatArray_size_uset (a : FloatArray) (i x h) : (a.uset i x h).size = a.size := by
   rw [
     FloatArray.uset,
