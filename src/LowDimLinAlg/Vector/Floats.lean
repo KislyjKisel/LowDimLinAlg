@@ -50,6 +50,18 @@ run_cmd
         deriving instance BEq for $vTy
 
         /--
+        Componentwise fused multiply-add `v1 * v2 + v3` using the scalar `fma` underneath.
+
+        This operation is performed with a single rounding per axis,
+        which can be more accurate than performing the multiplication and addition separately.
+        It will be faster than the unfused variant if the compilation target supports it,
+        otherwise it will be slower.
+        -/
+        @[inline]
+        def fma (v1 v2 v3 : $vTy) : $vTy :=
+          ⟨$(dims.map fun dim => app (cx.scalarMember "fma").getId <| #[`v1, `v2, `v3].map (vget · dim)),*⟩
+
+        /--
         Componentwise clamping of components.
 
         Panics in debug if for any axis `min` > `max`, `min` is NaN, or `max` is NaN.
