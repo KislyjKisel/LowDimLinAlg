@@ -42,7 +42,7 @@ run_cmd
       /-- Clamps `value` between 0 and 1. -/
       @[inline]
       def saturate (value : $sTy) : $sTy :=
-        clamp value 0 1
+        clamp (min := 0) (max := 1) (value := value)
 
       /--
       Returns a number that represents the sign of `value`.
@@ -54,7 +54,7 @@ run_cmd
       def sign (value : $sTy) : $sTy :=
         if value.isNaN
           then value
-          else if 1 / value >= 0
+          else if value != (-1 / 0) && 1 / value >= 0
             then 1
             else -1
 
@@ -100,7 +100,8 @@ run_cmd
       -/
       @[inline]
       def remap (inputStart inputEnd outputStart outputEnd value : $sTy) : $sTy :=
-        (value - inputStart) / (inputEnd - inputStart) * (outputEnd - outputStart) + outputStart
+        lerp (start := outputStart) («end» := outputEnd) <|
+          normalize (start := inputStart) («end» := inputEnd) value
 
       /--
       Wraps `value` from `start` to `end`.
